@@ -3,11 +3,10 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
-import { Header } from './components/Header'
-import { Footer } from './components/Footer'
-import './styles.css'
+import { Header } from '../components/Header'
+import { Footer } from '../components/Footer'
 
-export default async function HomePage() {
+export default async function ArticlesPage() {
   const headers = await getHeaders()
   const payload = await getPayload({ config })
   const { user } = await payload.auth({ headers })
@@ -20,7 +19,6 @@ export default async function HomePage() {
             not_equals: 'published',
           },
         },
-        limit: 3,
         sort: '-createdAt',
         depth: 1,
       })
@@ -33,7 +31,6 @@ export default async function HomePage() {
         equals: 'published',
       },
     },
-    limit: 3,
     sort: '-publishedDate',
     depth: 1,
   })
@@ -42,29 +39,16 @@ export default async function HomePage() {
     <main className="site">
       <Header />
 
-      <section className="hero hero-simple">
-        <div className="hero-copy">
-          <h1>A low-barrier home for unusual anatomical findings.</h1>
-          <p>
-            Oddtopsy Reports helps educators, clinicians, students, and researchers share focused
-            case papers without the cost and friction of traditional journal publishing.
-          </p>
-
-          <div className="hero-actions">
-            <Link href="/submit" className="button primary">
-              Submit a Paper
-            </Link>
-            <Link href="/articles" className="button secondary">
-              View Papers
-            </Link>
-          </div>
-        </div>
+      <section className="page-hero">
+        {/* <p className="eyebrow">Published papers</p> */}
+        <h1>Case papers and anatomical findings.</h1>
+        <p>A growing archive of submitted and editor-reviewed papers.</p>
       </section>
 
       {user && editorialQueue && (
         <section className="section editor-section">
           <div className="section-heading">
-            {/* <p className="eyebrow">Editors only</p> */}
+            <p className="eyebrow">Editors only</p>
             <h2>Editorial Queue Preview</h2>
           </div>
 

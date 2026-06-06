@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    submissions: Submission;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,6 +79,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -163,6 +165,68 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submissions".
+ */
+export interface Submission {
+  id: number;
+  title: string;
+  /**
+   * Used for the public paper URL once published.
+   */
+  slug?: string | null;
+  abstract?: string | null;
+  publishedDate?: string | null;
+  featured?: boolean | null;
+  correspondingAuthor: {
+    name: string;
+    email: string;
+    affiliation?: string | null;
+  };
+  coAuthors?:
+    | {
+        name: string;
+        affiliation?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  submissionType: 'upload' | 'editor';
+  /**
+   * Upload the submitted manuscript PDF.
+   */
+  manuscriptPDF?: (number | null) | Media;
+  /**
+   * Enter or edit the manuscript directly in the editor.
+   */
+  manuscriptBody?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  supportingImages?:
+    | {
+        image?: (number | null) | Media;
+        caption?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  authorMessage?: string | null;
+  status: 'submitted' | 'under_review' | 'revision_requested' | 'accepted' | 'rejected' | 'published';
+  editorNotes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -192,6 +256,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'submissions';
+        value: number | Submission;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -274,6 +342,46 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submissions_select".
+ */
+export interface SubmissionsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  abstract?: T;
+  publishedDate?: T;
+  featured?: T;
+  correspondingAuthor?:
+    | T
+    | {
+        name?: T;
+        email?: T;
+        affiliation?: T;
+      };
+  coAuthors?:
+    | T
+    | {
+        name?: T;
+        affiliation?: T;
+        id?: T;
+      };
+  submissionType?: T;
+  manuscriptPDF?: T;
+  manuscriptBody?: T;
+  supportingImages?:
+    | T
+    | {
+        image?: T;
+        caption?: T;
+        id?: T;
+      };
+  authorMessage?: T;
+  status?: T;
+  editorNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
