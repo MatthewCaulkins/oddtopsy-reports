@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     media: Media;
     submissions: Submission;
+    'editor-notes': EditorNote;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -80,6 +81,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
+    'editor-notes': EditorNotesSelect<false> | EditorNotesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -125,6 +127,15 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  profile?: {
+    displayName?: string | null;
+    title?: string | null;
+    affiliation?: string | null;
+    photo?: (number | null) | Media;
+    biography?: string | null;
+    displayOnAboutPage?: boolean | null;
+    displayOrder?: number | null;
+  };
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -175,11 +186,25 @@ export interface Submission {
    */
   slug?: string | null;
   abstract?: string | null;
+  keywords?:
+    | {
+        keyword: string;
+        id?: string | null;
+      }[]
+    | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  thumbnailImage?: (number | null) | Media;
+  heroImage?: (number | null) | Media;
   publishedDate?: string | null;
   featured?: boolean | null;
   correspondingAuthor: {
     name: string;
     email: string;
+    affiliation?: string | null;
+  };
+  leadAuthor: {
+    name: string;
     affiliation?: string | null;
   };
   coAuthors?:
@@ -220,8 +245,21 @@ export interface Submission {
       }[]
     | null;
   authorMessage?: string | null;
-  status: 'submitted' | 'under_review' | 'revision_requested' | 'accepted' | 'rejected' | 'published';
+  status: 'submitted' | 'under_review' | 'in_progress' | 'revision_requested' | 'accepted' | 'rejected' | 'published';
   editorNotes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "editor-notes".
+ */
+export interface EditorNote {
+  id: number;
+  submission: number | Submission;
+  createdBy: number | User;
+  noteType: 'internal' | 'revision_request' | 'publication_note';
+  note: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -260,6 +298,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'submissions';
         value: number | Submission;
+      } | null)
+    | ({
+        relationTo: 'editor-notes';
+        value: number | EditorNote;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -308,6 +350,17 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  profile?:
+    | T
+    | {
+        displayName?: T;
+        title?: T;
+        affiliation?: T;
+        photo?: T;
+        biography?: T;
+        displayOnAboutPage?: T;
+        displayOrder?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -351,6 +404,16 @@ export interface SubmissionsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   abstract?: T;
+  keywords?:
+    | T
+    | {
+        keyword?: T;
+        id?: T;
+      };
+  seoTitle?: T;
+  seoDescription?: T;
+  thumbnailImage?: T;
+  heroImage?: T;
   publishedDate?: T;
   featured?: T;
   correspondingAuthor?:
@@ -358,6 +421,12 @@ export interface SubmissionsSelect<T extends boolean = true> {
     | {
         name?: T;
         email?: T;
+        affiliation?: T;
+      };
+  leadAuthor?:
+    | T
+    | {
+        name?: T;
         affiliation?: T;
       };
   coAuthors?:
@@ -380,6 +449,18 @@ export interface SubmissionsSelect<T extends boolean = true> {
   authorMessage?: T;
   status?: T;
   editorNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "editor-notes_select".
+ */
+export interface EditorNotesSelect<T extends boolean = true> {
+  submission?: T;
+  createdBy?: T;
+  noteType?: T;
+  note?: T;
   updatedAt?: T;
   createdAt?: T;
 }

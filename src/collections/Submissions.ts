@@ -46,6 +46,35 @@ export const Submissions: CollectionConfig = {
       type: 'textarea',
     },
     {
+      name: 'keywords',
+      type: 'array',
+      fields: [
+        {
+          name: 'keyword',
+          type: 'text',
+          required: true,
+        },
+      ],
+    },
+    {
+      name: 'seoTitle',
+      type: 'text',
+    },
+    {
+      name: 'seoDescription',
+      type: 'textarea',
+    },
+    {
+      name: 'thumbnailImage',
+      type: 'upload',
+      relationTo: 'media',
+    },
+    {
+      name: 'heroImage',
+      type: 'upload',
+      relationTo: 'media',
+    },
+    {
       name: 'publishedDate',
       type: 'date',
       admin: {
@@ -69,6 +98,21 @@ export const Submissions: CollectionConfig = {
         {
           name: 'email',
           type: 'email',
+          required: true,
+        },
+        {
+          name: 'affiliation',
+          type: 'text',
+        },
+      ],
+    },
+    {
+      name: 'leadAuthor',
+      type: 'group',
+      fields: [
+        {
+          name: 'name',
+          type: 'text',
           required: true,
         },
         {
@@ -160,6 +204,7 @@ export const Submissions: CollectionConfig = {
       options: [
         { label: 'Submitted', value: 'submitted' },
         { label: 'Under Review', value: 'under_review' },
+        { label: 'In Progress', value: 'in_progress' },
         { label: 'Revision Requested', value: 'revision_requested' },
         { label: 'Accepted', value: 'accepted' },
         { label: 'Rejected', value: 'rejected' },

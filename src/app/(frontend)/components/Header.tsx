@@ -1,5 +1,5 @@
 import { headers as getHeaders } from 'next/headers'
-import Link from 'next/link'
+import Image from 'next/image'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 
@@ -24,11 +24,7 @@ export async function Header() {
     <header className="site-header">
       <div className="site-header-inner">
         <a href="/" className="site-logo">
-          <span className="site-logo-mark">OR</span>
-          <span>
-            <strong>Oddtopsy Reports</strong>
-            <small>Cadaveric studies & anatomical variations</small>
-          </span>
+          <img src="/branding/icon.png" alt="Oddtopsy Reports" width={42} height={42} />
         </a>
 
         <nav className="site-nav">

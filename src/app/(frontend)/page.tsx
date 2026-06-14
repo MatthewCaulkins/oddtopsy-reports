@@ -1,5 +1,5 @@
 import { headers as getHeaders } from 'next/headers'
-import Link from 'next/link'
+import Image from 'next/image'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
@@ -42,28 +42,36 @@ export default async function HomePage() {
     <main className="site">
       <Header />
 
-      <section className="hero hero-simple">
-        <div className="hero-copy">
-          <h1>A low-barrier home for unusual anatomical findings.</h1>
-          <p>
-            Oddtopsy Reports helps educators, clinicians, students, and researchers share focused
-            case papers without the cost and friction of traditional journal publishing.
-          </p>
+      <section className="hero">
+        <div className="hero-wrapper">
+          <div className="hero-image">
+            <img src="/branding/hero.png" alt="Oddtopsy Reports" width={500} height={500} />
+          </div>
+          <div className="hero-copy">
+            <div className="hero-brand">
+              <h1>Oddtopsy</h1>
 
-          <div className="hero-actions">
-            <Link href="/submit" className="button primary">
-              Submit a Paper
-            </Link>
-            <Link href="/articles" className="button secondary">
-              View Papers
-            </Link>
+              <div className="hero-report-label">REPORTS</div>
+
+              <p className="hero-tagline">Cadaveric Studies & Anatomical Variations</p>
+            </div>
+
+            <div className="hero-actions">
+              <a href="/submit" className="button primary">
+                Submit Paper
+              </a>
+
+              <a href="/subscribe" className="button secondary">
+                Subscribe
+              </a>
+            </div>
           </div>
         </div>
       </section>
 
       {user && editorialQueue && (
         <section className="section editor-section">
-          <div className="section-heading">
+          <div className="section-heading-rule">
             {/* <p className="eyebrow">Editors only</p> */}
             <h2>Editorial Queue Preview</h2>
           </div>
@@ -71,7 +79,7 @@ export default async function HomePage() {
           {editorialQueue.docs.length > 0 ? (
             <div className="card-grid">
               {editorialQueue.docs.map((submission) => (
-                <Link
+                <a
                   className="paper-card editor-card"
                   href={`/editorial/submissions/${submission.id}`}
                   key={submission.id}
@@ -79,7 +87,7 @@ export default async function HomePage() {
                   {/* <p className="card-label">{submission.status}</p> */}
                   <h3>{submission.title}</h3>
                   <p>{submission.correspondingAuthor?.name || 'Corresponding author pending'}</p>
-                </Link>
+                </a>
               ))}
             </div>
           ) : (
@@ -92,7 +100,7 @@ export default async function HomePage() {
       )}
 
       <section className="section">
-        <div className="section-heading">
+        <div className="section-heading-rule">
           {/* <p className="eyebrow">Archive</p> */}
           <h2>Published Papers</h2>
         </div>
@@ -100,11 +108,7 @@ export default async function HomePage() {
         {publishedPapers.docs.length > 0 ? (
           <div className="card-grid">
             {publishedPapers.docs.map((paper) => (
-              <Link
-                className="paper-card"
-                href={`/articles/${paper.slug || paper.id}`}
-                key={paper.id}
-              >
+              <a className="paper-card" href={`/articles/${paper.slug || paper.id}`} key={paper.id}>
                 {/* <p className="card-label">
                   {paper.publishedDate
                     ? new Date(paper.publishedDate).toLocaleDateString()
@@ -112,7 +116,7 @@ export default async function HomePage() {
                 </p> */}
                 <h3>{paper.title}</h3>
                 <p>{paper.abstract || paper.correspondingAuthor?.name}</p>
-              </Link>
+              </a>
             ))}
           </div>
         ) : (

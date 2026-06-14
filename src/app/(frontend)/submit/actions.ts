@@ -94,6 +94,10 @@ export async function submitPaper(formData: FormData) {
       submissionType,
       manuscriptPDF: mediaID,
       manuscriptBody: submissionType === 'editor' ? htmlToLexicalText(manuscriptHTML) : undefined,
+      leadAuthor: {
+        name: authorName,
+        affiliation,
+      },
       correspondingAuthor: {
         name: authorName,
         email: authorEmail,

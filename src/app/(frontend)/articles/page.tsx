@@ -47,8 +47,8 @@ export default async function ArticlesPage() {
 
       {user && editorialQueue && (
         <section className="section editor-section">
-          <div className="section-heading">
-            <p className="eyebrow">Editors only</p>
+          <div className="section-heading-rule">
+            {/* <p className="eyebrow">Editors only</p> */}
             <h2>Editorial Queue Preview</h2>
           </div>
 
@@ -76,7 +76,7 @@ export default async function ArticlesPage() {
       )}
 
       <section className="section">
-        <div className="section-heading">
+        <div className="section-heading-rule">
           {/* <p className="eyebrow">Archive</p> */}
           <h2>Published Papers</h2>
         </div>
