@@ -34,6 +34,10 @@ export const Submissions: CollectionConfig = {
       required: true,
     },
     {
+      name: 'subtitle',
+      type: 'text',
+    },
+    {
       name: 'slug',
       type: 'text',
       unique: true,
@@ -44,6 +48,12 @@ export const Submissions: CollectionConfig = {
     {
       name: 'abstract',
       type: 'textarea',
+    },
+    {
+      name: 'focusArea',
+      type: 'relationship',
+      relationTo: 'focus-areas',
+      hasMany: true,
     },
     {
       name: 'keywords',
@@ -57,6 +67,27 @@ export const Submissions: CollectionConfig = {
       ],
     },
     {
+      name: 'findingDate',
+      type: 'date',
+      admin: {
+        description: 'Optional date associated with the anatomical finding or case.',
+      },
+    },
+    {
+      name: 'location',
+      type: 'text',
+      admin: {
+        description: 'Optional institution, city, state, or country.',
+      },
+    },
+    {
+      name: 'mediaNotes',
+      type: 'textarea',
+      admin: {
+        description: 'Notes about images, figures, or supporting media.',
+      },
+    },
+    {
       name: 'seoTitle',
       type: 'text',
     },
@@ -65,14 +96,13 @@ export const Submissions: CollectionConfig = {
       type: 'textarea',
     },
     {
-      name: 'thumbnailImage',
+      name: 'featuredImage',
       type: 'upload',
       relationTo: 'media',
-    },
-    {
-      name: 'heroImage',
-      type: 'upload',
-      relationTo: 'media',
+      admin: {
+        description:
+          'Primary image used on paper cards and the single paper page. Upload a large image and use crop/focal point controls in Media.',
+      },
     },
     {
       name: 'publishedDate',
@@ -212,18 +242,6 @@ export const Submissions: CollectionConfig = {
       ],
       access: {
         create: ({ req }) => Boolean(req.user),
-        update: ({ req }) => Boolean(req.user),
-      },
-    },
-    {
-      name: 'editorNotes',
-      type: 'textarea',
-      admin: {
-        position: 'sidebar',
-      },
-      access: {
-        create: ({ req }) => Boolean(req.user),
-        read: ({ req }) => Boolean(req.user),
         update: ({ req }) => Boolean(req.user),
       },
     },

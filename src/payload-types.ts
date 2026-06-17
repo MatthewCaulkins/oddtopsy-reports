@@ -67,10 +67,11 @@ export interface Config {
   };
   blocks: {};
   collections: {
-    users: User;
+    'editor-notes': EditorNote;
+    'focus-areas': FocusArea;
     media: Media;
     submissions: Submission;
-    'editor-notes': EditorNote;
+    users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,10 +79,11 @@ export interface Config {
   };
   collectionsJoins: {};
   collectionsSelect: {
-    users: UsersSelect<false> | UsersSelect<true>;
+    'editor-notes': EditorNotesSelect<false> | EditorNotesSelect<true>;
+    'focus-areas': FocusAreasSelect<false> | FocusAreasSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
-    'editor-notes': EditorNotesSelect<false> | EditorNotesSelect<true>;
+    users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -123,56 +125,16 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
+ * via the `definition` "editor-notes".
  */
-export interface User {
+export interface EditorNote {
   id: number;
-  profile?: {
-    displayName?: string | null;
-    title?: string | null;
-    affiliation?: string | null;
-    photo?: (number | null) | Media;
-    biography?: string | null;
-    displayOnAboutPage?: boolean | null;
-    displayOrder?: number | null;
-  };
+  submission: number | Submission;
+  createdBy: number | User;
+  noteType: 'internal' | 'revision_request' | 'publication_note';
+  note: string;
   updatedAt: string;
   createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: number;
-  alt: string;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -181,21 +143,37 @@ export interface Media {
 export interface Submission {
   id: number;
   title: string;
+  subtitle?: string | null;
   /**
    * Used for the public paper URL once published.
    */
   slug?: string | null;
   abstract?: string | null;
+  focusArea?: (number | FocusArea)[] | null;
   keywords?:
     | {
         keyword: string;
         id?: string | null;
       }[]
     | null;
+  /**
+   * Optional date associated with the anatomical finding or case.
+   */
+  findingDate?: string | null;
+  /**
+   * Optional institution, city, state, or country.
+   */
+  location?: string | null;
+  /**
+   * Notes about images, figures, or supporting media.
+   */
+  mediaNotes?: string | null;
   seoTitle?: string | null;
   seoDescription?: string | null;
-  thumbnailImage?: (number | null) | Media;
-  heroImage?: (number | null) | Media;
+  /**
+   * Primary image used on paper cards and the single paper page. Upload a large image and use crop/focal point controls in Media.
+   */
+  featuredImage?: (number | null) | Media;
   publishedDate?: string | null;
   featured?: boolean | null;
   correspondingAuthor: {
@@ -246,22 +224,106 @@ export interface Submission {
     | null;
   authorMessage?: string | null;
   status: 'submitted' | 'under_review' | 'in_progress' | 'revision_requested' | 'accepted' | 'rejected' | 'published';
-  editorNotes?: string | null;
   updatedAt: string;
   createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "editor-notes".
+ * via the `definition` "focus-areas".
  */
-export interface EditorNote {
+export interface FocusArea {
   id: number;
-  submission: number | Submission;
-  createdBy: number | User;
-  noteType: 'internal' | 'revision_request' | 'publication_note';
-  note: string;
+  name: string;
+  /**
+   * Auto-generated from the focus area name if left blank.
+   */
+  slug?: string | null;
+  description?: string | null;
+  /**
+   * Auto-increments if left blank.
+   */
+  displayOrder?: number | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    card?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    square?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    hero?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  profile?: {
+    displayName?: string | null;
+    title?: string | null;
+    affiliation?: string | null;
+    photo?: (number | null) | Media;
+    biography?: string | null;
+    displayOnAboutPage?: boolean | null;
+    displayOrder?: number | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -288,8 +350,12 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: 'users';
-        value: number | User;
+        relationTo: 'editor-notes';
+        value: number | EditorNote;
+      } | null)
+    | ({
+        relationTo: 'focus-areas';
+        value: number | FocusArea;
       } | null)
     | ({
         relationTo: 'media';
@@ -300,8 +366,8 @@ export interface PayloadLockedDocument {
         value: number | Submission;
       } | null)
     | ({
-        relationTo: 'editor-notes';
-        value: number | EditorNote;
+        relationTo: 'users';
+        value: number | User;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -347,36 +413,27 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
+ * via the `definition` "editor-notes_select".
  */
-export interface UsersSelect<T extends boolean = true> {
-  profile?:
-    | T
-    | {
-        displayName?: T;
-        title?: T;
-        affiliation?: T;
-        photo?: T;
-        biography?: T;
-        displayOnAboutPage?: T;
-        displayOrder?: T;
-      };
+export interface EditorNotesSelect<T extends boolean = true> {
+  submission?: T;
+  createdBy?: T;
+  noteType?: T;
+  note?: T;
   updatedAt?: T;
   createdAt?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
-  sessions?:
-    | T
-    | {
-        id?: T;
-        createdAt?: T;
-        expiresAt?: T;
-      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "focus-areas_select".
+ */
+export interface FocusAreasSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  displayOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -395,6 +452,40 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+  sizes?:
+    | T
+    | {
+        card?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        square?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        hero?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -402,18 +493,22 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface SubmissionsSelect<T extends boolean = true> {
   title?: T;
+  subtitle?: T;
   slug?: T;
   abstract?: T;
+  focusArea?: T;
   keywords?:
     | T
     | {
         keyword?: T;
         id?: T;
       };
+  findingDate?: T;
+  location?: T;
+  mediaNotes?: T;
   seoTitle?: T;
   seoDescription?: T;
-  thumbnailImage?: T;
-  heroImage?: T;
+  featuredImage?: T;
   publishedDate?: T;
   featured?: T;
   correspondingAuthor?:
@@ -448,21 +543,41 @@ export interface SubmissionsSelect<T extends boolean = true> {
       };
   authorMessage?: T;
   status?: T;
-  editorNotes?: T;
   updatedAt?: T;
   createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "editor-notes_select".
+ * via the `definition` "users_select".
  */
-export interface EditorNotesSelect<T extends boolean = true> {
-  submission?: T;
-  createdBy?: T;
-  noteType?: T;
-  note?: T;
+export interface UsersSelect<T extends boolean = true> {
+  profile?:
+    | T
+    | {
+        displayName?: T;
+        title?: T;
+        affiliation?: T;
+        photo?: T;
+        biography?: T;
+        displayOnAboutPage?: T;
+        displayOrder?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
