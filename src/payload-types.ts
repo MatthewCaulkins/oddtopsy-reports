@@ -148,8 +148,8 @@ export interface Submission {
    * Used for the public paper URL once published.
    */
   slug?: string | null;
-  abstract?: string | null;
-  focusArea?: (number | FocusArea)[] | null;
+  abstract: string;
+  focusArea: (number | FocusArea)[];
   keywords?:
     | {
         keyword: string;
@@ -173,7 +173,7 @@ export interface Submission {
   /**
    * Primary image used on paper cards and the single paper page. Upload a large image and use crop/focal point controls in Media.
    */
-  featuredImage?: (number | null) | Media;
+  featuredImage: number | Media;
   publishedDate?: string | null;
   featured?: boolean | null;
   correspondingAuthor: {

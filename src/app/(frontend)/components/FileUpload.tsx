@@ -13,9 +13,20 @@ type FileUploadProps = {
   label: string
   accept?: string
   multiple?: boolean
+  required?: boolean
+  invalid?: boolean
+  errorMessage?: string
 }
 
-export function FileUpload({ name, label, accept, multiple = false }: FileUploadProps) {
+export function FileUpload({
+  name,
+  label,
+  accept,
+  multiple = false,
+  required = false,
+  invalid = false,
+  errorMessage = 'Please complete this required field.',
+}: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [files, setFiles] = useState<UploadFile[]>([])
 
@@ -40,8 +51,10 @@ export function FileUpload({ name, label, accept, multiple = false }: FileUpload
   }
 
   return (
-    <div className="form-row file-upload-row">
-      <label htmlFor={name}>{label}</label>
+    <div className={`form-row file-upload-row ${invalid ? 'is-invalid' : ''}`}>
+      <label htmlFor={name}>
+        {label} {required && <span className="required">*</span>}
+      </label>
 
       <div className="file-upload">
         <label className="button secondary file-button" htmlFor={name}>
@@ -56,6 +69,7 @@ export function FileUpload({ name, label, accept, multiple = false }: FileUpload
           type="file"
           accept={accept}
           multiple={multiple}
+          required={required}
           onChange={(event) => handleFiles(event.target.files)}
         />
 
@@ -81,6 +95,8 @@ export function FileUpload({ name, label, accept, multiple = false }: FileUpload
             ))}
           </div>
         )}
+
+        {invalid && <p className="field-error">{errorMessage}</p>}
       </div>
     </div>
   )

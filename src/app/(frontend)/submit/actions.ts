@@ -44,7 +44,7 @@ export async function submitPaper(formData: FormData) {
 
   const title = String(formData.get('title') || '').trim()
   const subtitle = String(formData.get('subtitle') || '').trim()
-  const featuredImage = formData.get('featuredImage') as File | null
+  //   const featuredImage = formData.get('featuredImage') as File | null
   //   const focusAreaRaw = String(formData.get('focusArea') || '').trim()
   //   const focusArea = focusAreaRaw ? Number(focusAreaRaw) : undefined
 
@@ -57,18 +57,18 @@ export async function submitPaper(formData: FormData) {
   const location = String(formData.get('location') || '').trim()
   const mediaNotes = String(formData.get('mediaNotes') || '').trim()
   const abstract = String(formData.get('abstract') || '').trim()
-  const authorName = String(formData.get('authorName') || '').trim()
-  const affiliation = String(formData.get('affiliation') || '').trim()
+  const leadAuthorName = String(formData.get('leadAuthorName') || '').trim()
+  const leadAuthorAffiliation = String(formData.get('leadAuthorAffiliation') || '').trim()
 
   const correspondingAuthorName = String(formData.get('correspondingAuthorName') || '').trim()
-  const authorEmail = String(formData.get('authorEmail') || '').trim()
+  const correspondingAuthorEmail = String(formData.get('correspondingAuthorEmail') || '').trim()
   const correspondingAuthorAffiliation = String(
     formData.get('correspondingAuthorAffiliation') || '',
   ).trim()
 
   const authorMessage = String(formData.get('authorMessage') || '').trim()
   const submissionType = String(formData.get('submissionType') || 'upload') as 'upload' | 'editor'
-  const manuscriptHTML = String(formData.get('manuscriptHTML') || '').trim()
+  const manuscripBody = String(formData.get('manuscripBody') || '').trim()
   const pdf = formData.get('manuscriptPDF') as File | null
 
   const supportingImages = formData.getAll('supportingImages') as File[]
@@ -82,8 +82,14 @@ export async function submitPaper(formData: FormData) {
         .map((keyword) => ({ keyword }))
     : []
 
-  if (!title || !authorName || !correspondingAuthorName || !authorEmail) {
+  if (!title || !leadAuthorName || !correspondingAuthorName || !correspondingAuthorEmail) {
     throw new Error('Missing required fields.')
+  }
+
+  const featuredImage = formData.get('featuredImage') as File | null
+
+  if (!featuredImage || featuredImage.size === 0) {
+    throw new Error('Please upload a featured image.')
   }
 
   let mediaID: number | undefined
@@ -96,7 +102,7 @@ export async function submitPaper(formData: FormData) {
     mediaID = await uploadMedia(pdf, title)
   }
 
-  if (submissionType === 'editor' && !manuscriptHTML) {
+  if (submissionType === 'editor' && !manuscripBody) {
     throw new Error('Please enter the manuscript text.')
   }
 
@@ -134,10 +140,7 @@ export async function submitPaper(formData: FormData) {
   }
 
   // Images
-  const featuredImageID =
-    featuredImage && featuredImage.size > 0
-      ? await uploadMedia(featuredImage, `${title} featured image`)
-      : undefined
+  const featuredImageID = await uploadMedia(featuredImage, `${title} featured image`)
 
   const supportingImageData = await Promise.all(
     supportingImages
@@ -160,18 +163,18 @@ export async function submitPaper(formData: FormData) {
       findingDate: findingDate || undefined,
       location,
       leadAuthor: {
-        name: authorName,
-        affiliation,
+        name: leadAuthorName,
+        affiliation: leadAuthorAffiliation,
       },
       correspondingAuthor: {
-        name: correspondingAuthorName || authorName,
-        email: authorEmail,
-        affiliation: correspondingAuthorAffiliation || affiliation,
+        name: correspondingAuthorName,
+        email: correspondingAuthorEmail,
+        affiliation: correspondingAuthorAffiliation,
       },
       coAuthors,
       submissionType,
       manuscriptPDF: mediaID,
-      manuscriptBody: submissionType === 'editor' ? htmlToLexicalText(manuscriptHTML) : undefined,
+      manuscriptBody: submissionType === 'editor' ? htmlToLexicalText(manuscripBody) : undefined,
       supportingImages: supportingImageData,
       mediaNotes,
       authorMessage,

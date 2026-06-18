@@ -48,12 +48,14 @@ export const Submissions: CollectionConfig = {
     {
       name: 'abstract',
       type: 'textarea',
+      required: true,
     },
     {
       name: 'focusArea',
       type: 'relationship',
       relationTo: 'focus-areas',
       hasMany: true,
+      required: true,
     },
     {
       name: 'keywords',
@@ -99,6 +101,7 @@ export const Submissions: CollectionConfig = {
       name: 'featuredImage',
       type: 'upload',
       relationTo: 'media',
+      required: true,
       admin: {
         description:
           'Primary image used on paper cards and the single paper page. Upload a large image and use crop/focal point controls in Media.',

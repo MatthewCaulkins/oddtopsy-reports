@@ -494,6 +494,38 @@ p {
     color: var(--color-text);
 }
 
+
+.button {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
+}
+
+.button.primary:hover {
+  background: #1f5162;
+}
+
+.button.secondary:hover,
+.nav-login:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+button:disabled,
+.button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+  transform: none;
+}
+
 /* ==========================================================================
    Cards / Grids
    ========================================================================== */
@@ -566,6 +598,29 @@ p {
 .form-row textarea,
 .form-row select {
   min-width: 0;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid rgba(40, 95, 115, 0.25);
+  border-color: var(--color-accent);
+}
+
+.site-nav a,
+.footer-links a,
+.paper-card {
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.paper-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-accent);
 }
 
 .submit-form input,
@@ -692,6 +747,32 @@ p {
   height: 120px;
 }
 
+
+.form-row.is-invalid {
+  background: var(--color-danger-soft);
+  border: 1px solid rgba(159, 58, 56, 0.35);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.form-row.is-invalid label {
+  color: var(--color-danger);
+}
+
+.form-row.is-invalid input,
+.form-row.is-invalid textarea,
+.form-row.is-invalid select {
+  border-color: rgba(159, 58, 56, 0.45);
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.field-error {
+  margin: var(--space-2) 0 0;
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
 /* 
     Custom input buttons
 */
@@ -778,6 +859,36 @@ p {
     align-items: flex-start;
     flex-direction: column;
   }
+}
+
+.required {
+  color: var(--color-danger);
+  font-weight: 800;
+}
+
+.form-error-message {
+  color: var(--color-danger);
+  font-weight: 700;
+  margin: 0;
+}
+
+.form-error-summary {
+  border: 1px solid rgba(159, 58, 56, 0.35);
+  border-radius: var(--radius-lg);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  padding: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.form-error-summary h3 {
+  margin-bottom: var(--space-2);
+  color: var(--color-danger);
+}
+
+.form-error-summary ul {
+  margin: 0;
+  padding-left: var(--space-5);
 }
 
 /* ==========================================================================

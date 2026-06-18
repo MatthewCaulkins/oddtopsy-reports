@@ -47,7 +47,7 @@ function ManuscriptEditor() {
       </div>
 
       <EditorContent editor={editor} className="rich-editor" />
-      <input type="hidden" name="manuscriptHTML" value={html} required />
+      <input type="hidden" name="manuscriptBody" value={html} required />
     </div>
   )
 }
@@ -55,6 +55,17 @@ function ManuscriptEditor() {
 export function SubmitForm({ focusAreas }: SubmitFormProps) {
   const [submissionType, setSubmissionType] = useState<'upload' | 'editor'>('upload')
   const [coAuthors, setCoAuthors] = useState<CoAuthor[]>([])
+  type FormError = {
+    name: string
+    label: string
+  }
+
+  const [errors, setErrors] = useState<FormError[]>([])
+  function hasError(name: string) {
+    return errors.some((error) => error.name === name)
+  }
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   function updateCoAuthor(index: number, key: keyof CoAuthor, value: string) {
     setCoAuthors((current) =>
@@ -62,39 +73,172 @@ export function SubmitForm({ focusAreas }: SubmitFormProps) {
     )
   }
 
+  function validateForm(form: HTMLFormElement) {
+    const nextErrors: FormError[] = []
+
+    const requiredFields = [
+      { name: 'title', label: 'Paper title' },
+      { name: 'featuredImage', label: 'Featured image' },
+      { name: 'abstract', label: 'Abstract / summary' },
+      { name: 'focusArea', label: 'Focus areas' },
+      { name: 'correspondingAuthorEmail', label: 'Corresponding author email' },
+      { name: 'correspondingAuthorName', label: 'Corresponding author name' },
+      { name: 'leadAuthorName', label: 'Lead author name' },
+    ]
+
+    requiredFields.forEach((field) => {
+      const input = form.elements.namedItem(field.name)
+
+      if (input instanceof HTMLInputElement) {
+        if (input.type === 'file') {
+          if (!input.files || input.files.length === 0) {
+            nextErrors.push(field)
+          }
+        } else if (!input.value.trim()) {
+          nextErrors.push(field)
+        }
+      }
+
+      if (input instanceof HTMLTextAreaElement) {
+        if (!input.value.trim()) nextErrors.push(field)
+      }
+
+      if (input instanceof HTMLSelectElement) {
+        if (input.multiple) {
+          const selected = Array.from(input.selectedOptions).filter((option) => option.value)
+
+          if (selected.length === 0) nextErrors.push(field)
+        } else if (!input.value) {
+          nextErrors.push(field)
+        }
+      }
+    })
+
+    if (submissionType === 'upload') {
+      const fileInput = form.elements.namedItem('manuscriptPDF')
+
+      if (
+        fileInput instanceof HTMLInputElement &&
+        (!fileInput.files || fileInput.files.length === 0)
+      ) {
+        nextErrors.push({ name: 'manuscriptPDF', label: 'Manuscript PDF' })
+      }
+    }
+
+    if (submissionType === 'editor') {
+      const manuscriptBody = form.elements.namedItem('manuscriptBody')
+
+      const bodyValue =
+        manuscriptBody instanceof HTMLInputElement
+          ? manuscriptBody.value
+              .replace(/<[^>]*>/g, '')
+              .replace(/&nbsp;/g, '')
+              .trim()
+          : ''
+
+      if (!bodyValue) {
+        nextErrors.push({
+          name: 'manuscriptBody',
+          label: 'Manuscript body',
+        })
+      }
+    }
+
+    return nextErrors
+  }
+
   return (
-    <form className="submit-form" action={submitPaper}>
+    <form
+      className="submit-form"
+      action={submitPaper}
+      noValidate
+      onSubmit={(event) => {
+        const nextErrors = validateForm(event.currentTarget)
+
+        if (nextErrors.length > 0) {
+          event.preventDefault()
+          setErrors(nextErrors)
+
+          document.querySelector('.form-error-summary')?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          })
+
+          return
+        }
+
+        setErrors([])
+        setIsSubmitting(true)
+      }}
+    >
+      {errors.length > 0 && (
+        <div className="form-error-summary">
+          <h3>Please complete the required fields.</h3>
+          <ul>
+            {errors.map((error) => (
+              <li key={error.name}>{error.label}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <section className="form-section">
         <div className="section-heading-rule">
           <h2>Paper Details</h2>
         </div>
 
-        <div className="form-row">
-          <label htmlFor="title">Paper title</label>
-          <input id="title" name="title" required />
+        <div className={`form-row ${hasError('title') ? 'is-invalid' : ''}`}>
+          <label htmlFor="title">
+            Paper title <span className="required">*</span>
+          </label>
+          <div>
+            <input id="title" name="title" required />
+            {hasError('title') && (
+              <p className="field-error">Please complete this required field.</p>
+            )}
+          </div>
         </div>
 
         <div className="form-row">
-          <label htmlFor="subtitle">Subtitle</label>
+          <label htmlFor="title">Subtitle</label>
           <input id="subtitle" name="subtitle" />
         </div>
 
-        <FileUpload name="featuredImage" label="Featured Image" accept="image/*" />
+        <FileUpload
+          name="featuredImage"
+          label="Featured Image"
+          accept="image/*"
+          required
+          invalid={hasError('featuredImage')}
+        />
 
-        <div className="form-row">
-          <label htmlFor="abstract">Abstract / summary</label>
-          <textarea name="abstract" rows={5} />
+        <div className={`form-row ${hasError('abstract') ? 'is-invalid' : ''}`}>
+          <label htmlFor="abstract">
+            Abstract <span className="required">*</span>
+          </label>
+          <div>
+            <textarea id="abstract" name="abstract" rows={5} required />
+            {hasError('abstract') && (
+              <p className="field-error">Please complete this required field.</p>
+            )}
+          </div>
         </div>
 
-        <div className="form-row">
-          <label htmlFor="focusArea">Focus areas</label>
-          <select id="focusArea" name="focusArea" multiple required>
-            {focusAreas.map((focusArea) => (
-              <option key={focusArea.id} value={focusArea.id}>
-                {focusArea.name}
-              </option>
-            ))}
-          </select>
+        <div className={`form-row ${hasError('focusArea') ? 'is-invalid' : ''}`}>
+          <label htmlFor="focusArea">
+            Focus areas <span className="required">*</span>
+          </label>
+          <div>
+            <select id="focusArea" name="focusArea" multiple required>
+              {focusAreas.map((focusArea) => (
+                <option key={focusArea.id} value={focusArea.id}>
+                  {focusArea.name}
+                </option>
+              ))}
+            </select>
+            {hasError('focusArea') && (
+              <p className="field-error">Please complete this required field.</p>
+            )}
+          </div>
         </div>
 
         <div className="form-row">
@@ -123,35 +267,56 @@ export function SubmitForm({ focusAreas }: SubmitFormProps) {
         </div>
 
         <div className="author-card">
-          <h3>Lead Author</h3>
-
-          <div className="form-row">
-            <label htmlFor="leadAuthorName">Name</label>
-            <input id="leadAuthorName" name="authorName" required />
-          </div>
-
-          <div className="form-row">
-            <label htmlFor="leadAuthorAffiliation">Affiliation</label>
-            <input id="leadAuthorAffiliation" name="affiliation" />
-          </div>
-        </div>
-
-        <div className="author-card">
           <h3>Corresponding Author</h3>
 
-          <div className="form-row">
-            <label htmlFor="correspondingAuthorName">Name</label>
-            <input id="correspondingAuthorName" name="correspondingAuthorName" required />
+          <div className={`form-row ${hasError('correspondingAuthorName') ? 'is-invalid' : ''}`}>
+            <label htmlFor="correspondingAuthorName">
+              Name <span className="required">*</span>
+            </label>
+            <div>
+              <input id="correspondingAuthorName" name="correspondingAuthorName" required />
+              {hasError('correspondingAuthorName') && (
+                <p className="field-error">Please complete this required field.</p>
+              )}
+            </div>
           </div>
 
-          <div className="form-row">
-            <label htmlFor="correspondingAuthorEmail">Email</label>
-            <input id="correspondingAuthorEmail" name="authorEmail" type="email" required />
+          <div className={`form-row ${hasError('correspondingAuthorEmail') ? 'is-invalid' : ''}`}>
+            <label htmlFor="correspondingAuthorEmail">
+              Email <span className="required">*</span>
+            </label>
+            <div>
+              <input id="correspondingAuthorEmail" name="correspondingAuthorEmail" required />
+              {hasError('correspondingAuthorEmail') && (
+                <p className="field-error">Please complete this required field.</p>
+              )}
+            </div>
           </div>
 
           <div className="form-row">
             <label htmlFor="correspondingAuthorAffiliation">Affiliation</label>
             <input id="correspondingAuthorAffiliation" name="correspondingAuthorAffiliation" />
+          </div>
+        </div>
+
+        <div className="author-card">
+          <h3>Lead Author</h3>
+
+          <div className={`form-row ${hasError('leadAuthorName') ? 'is-invalid' : ''}`}>
+            <label htmlFor="leadAuthorName">
+              Name <span className="required">*</span>
+            </label>
+            <div>
+              <input id="leadAuthorName" name="leadAuthorName" required />
+              {hasError('leadAuthorName') && (
+                <p className="field-error">Please complete this required field.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="form-row">
+            <label htmlFor="leadAuthorAffiliation">Affiliation</label>
+            <input id="leadAuthorAffiliation" name="affiliation" />
           </div>
         </div>
 
@@ -232,15 +397,27 @@ export function SubmitForm({ focusAreas }: SubmitFormProps) {
         </div>
 
         {submissionType === 'upload' && (
-          <FileUpload name="manuscriptPDF" label="Manuscript PDF" accept="application/pdf" />
+          <FileUpload
+            name="manuscriptPDF"
+            label="Manuscript PDF"
+            accept="application/pdf"
+            required
+            invalid={hasError('manuscriptPDF')}
+          />
         )}
 
         {submissionType === 'editor' && (
-          <div className="form-row editor-row">
-            <label htmlFor="manuscriptBody">Manuscript body</label>
-
-            <div className="editor-field">
-              <ManuscriptEditor />
+          <div className={`form-row ${hasError('manuscriptBody') ? 'is-invalid' : ''}`}>
+            <label htmlFor="manuscriptBody">
+              Manuscript body <span className="required">*</span>
+            </label>
+            <div>
+              <div className="editor-field">
+                <ManuscriptEditor />
+                {hasError('manuscriptBody') && (
+                  <p className="field-error">Please complete this required field.</p>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -264,8 +441,8 @@ export function SubmitForm({ focusAreas }: SubmitFormProps) {
         </div>
       </section>
 
-      <button className="button primary submit-button" type="submit">
-        Submit Paper
+      <button className="button primary submit-button" type="submit" disabled={isSubmitting}>
+        {isSubmitting ? 'Submitting…' : 'Submit Paper'}
       </button>
     </form>
   )
