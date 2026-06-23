@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
+import { Breadcrumbs } from '@/app/(frontend)/components/Breadcrumbs'
 import { Header } from '../../../components/Header'
 import { Footer } from '../../../components/Footer'
 import { approveSubmission } from './actions'
@@ -39,6 +40,7 @@ export default async function EditorialSubmissionPage({ params }: Props) {
   return (
     <main className="site">
       <Header />
+      <Breadcrumbs items={[{ label: 'Papers', href: '/articles' }, { label: submission.title }]} />
 
       <section className="page-hero">
         {/* <p className="eyebrow">Editorial review</p> */}

@@ -2,6 +2,7 @@ import { headers as getHeaders } from 'next/headers'
 import Image from 'next/image'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
+import { NavLinks } from './NavLinks'
 
 function getInitials(email?: string | null) {
   if (!email) return 'U'
@@ -28,10 +29,7 @@ export async function Header() {
         </a>
 
         <nav className="site-nav">
-          <a href="/articles">Papers</a>
-          <a href="/submit">Submit</a>
-          <a href="/about">About</a>
-          <a href="/subscribe">Subscribe</a>
+          <NavLinks />
 
           {user ? (
             <details className="user-menu">

@@ -1,8 +1,10 @@
 import { headers as getHeaders } from 'next/headers'
-import Image from 'next/image'
+// import Image from 'next/image'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
+
+import { PaperCard } from './components/PaperCard'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
 import './styles.css'
@@ -79,15 +81,7 @@ export default async function HomePage() {
           {editorialQueue.docs.length > 0 ? (
             <div className="card-grid">
               {editorialQueue.docs.map((submission) => (
-                <a
-                  className="paper-card editor-card"
-                  href={`/editorial/submissions/${submission.id}`}
-                  key={submission.id}
-                >
-                  {/* <p className="card-label">{submission.status}</p> */}
-                  <h3>{submission.title}</h3>
-                  <p>{submission.correspondingAuthor?.name || 'Corresponding author pending'}</p>
-                </a>
+                <PaperCard paper={submission} editorial key={submission.id} />
               ))}
             </div>
           ) : (
@@ -108,15 +102,7 @@ export default async function HomePage() {
         {publishedPapers.docs.length > 0 ? (
           <div className="card-grid">
             {publishedPapers.docs.map((paper) => (
-              <a className="paper-card" href={`/articles/${paper.slug || paper.id}`} key={paper.id}>
-                {/* <p className="card-label">
-                  {paper.publishedDate
-                    ? new Date(paper.publishedDate).toLocaleDateString()
-                    : 'Published'}
-                </p> */}
-                <h3>{paper.title}</h3>
-                <p>{paper.abstract || paper.correspondingAuthor?.name}</p>
-              </a>
+              <PaperCard paper={paper} key={paper.id} />
             ))}
           </div>
         ) : (

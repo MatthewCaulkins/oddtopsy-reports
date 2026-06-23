@@ -1,8 +1,10 @@
 import { headers as getHeaders } from 'next/headers'
-import Link from 'next/link'
+// import Link from 'next/link'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
+
+import { PaperCard } from '../components/PaperCard'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 
@@ -54,17 +56,11 @@ export default async function ArticlesPage() {
 
           {editorialQueue.docs.length > 0 ? (
             <div className="card-grid">
-              {editorialQueue.docs.map((submission) => (
-                <Link
-                  className="paper-card editor-card"
-                  href={`/editorial/submissions/${submission.id}`}
-                  key={submission.id}
-                >
-                  {/* <p className="card-label">{submission.status}</p> */}
-                  <h3>{submission.title}</h3>
-                  <p>{submission.correspondingAuthor?.name || 'Corresponding author pending'}</p>
-                </Link>
-              ))}
+              <div className="card-grid">
+                {editorialQueue.docs.map((submission) => (
+                  <PaperCard paper={submission} editorial key={submission.id} />
+                ))}
+              </div>
             </div>
           ) : (
             <div className="empty-state">
@@ -83,21 +79,11 @@ export default async function ArticlesPage() {
 
         {publishedPapers.docs.length > 0 ? (
           <div className="card-grid">
-            {publishedPapers.docs.map((paper) => (
-              <Link
-                className="paper-card"
-                href={`/articles/${paper.slug || paper.id}`}
-                key={paper.id}
-              >
-                {/* <p className="card-label">
-                  {paper.publishedDate
-                    ? new Date(paper.publishedDate).toLocaleDateString()
-                    : 'Published'}
-                </p> */}
-                <h3>{paper.title}</h3>
-                <p>{paper.abstract || paper.correspondingAuthor?.name}</p>
-              </Link>
-            ))}
+            <div className="card-grid">
+              {publishedPapers.docs.map((paper) => (
+                <PaperCard paper={paper} key={paper.id} />
+              ))}
+            </div>
           </div>
         ) : (
           <div className="empty-state">
