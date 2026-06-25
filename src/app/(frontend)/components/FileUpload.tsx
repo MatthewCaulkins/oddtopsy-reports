@@ -1,11 +1,20 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import type { Media } from '@/payload-types'
 
 type UploadFile = {
   id: string
   file: File
   preview?: string
+}
+
+export type ExistingFile = {
+  id: number | string
+  url?: string | null
+  filename?: string | null
+  alt?: string | null
+  mimeType?: string | null
 }
 
 type FileUploadProps = {
@@ -16,6 +25,7 @@ type FileUploadProps = {
   required?: boolean
   invalid?: boolean
   errorMessage?: string
+  existingFiles?: ExistingFile[]
 }
 
 export function FileUpload({
@@ -26,6 +36,7 @@ export function FileUpload({
   required = false,
   invalid = false,
   errorMessage = 'Please complete this required field.',
+  existingFiles = [],
 }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [files, setFiles] = useState<UploadFile[]>([])
@@ -73,6 +84,28 @@ export function FileUpload({
           onChange={(event) => handleFiles(event.target.files)}
         />
 
+        {existingFiles.length > 0 && (
+        <div className="file-preview-list existing-file-list">
+            {existingFiles.map((item) => {
+            const isImage = item.mimeType?.startsWith('image/') || item.url?.match(/\.(jpg|jpeg|png|webp|gif)$/i)
+
+            return (
+                <div className="file-preview existing-file-preview" key={item.id}>
+                {isImage && item.url ? (
+                    <img src={item.url} alt={item.alt || ''} />
+                ) : (
+                    <div className="file-preview-icon">PDF</div>
+                )}
+
+                <div className="file-preview-content">
+                    <strong>{item.filename || item.alt || 'Existing file'}</strong>
+                    <small>Current upload</small>
+                </div>
+                </div>
+            )
+            })}
+        </div>
+        )}
         {files.length > 0 && (
           <div className="file-preview-list">
             {files.map((item) => (

@@ -5,6 +5,8 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 
 import { PaperCard } from './components/PaperCard'
+import { PaperCarousel } from './components/PaperCarousel'
+
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
 import './styles.css'
@@ -22,7 +24,7 @@ export default async function HomePage() {
             not_equals: 'published',
           },
         },
-        limit: 3,
+        limit: 8,
         sort: '-createdAt',
         depth: 1,
       })
@@ -35,7 +37,7 @@ export default async function HomePage() {
         equals: 'published',
       },
     },
-    limit: 3,
+    limit: 8,
     sort: '-publishedDate',
     depth: 1,
   })
@@ -79,10 +81,10 @@ export default async function HomePage() {
           </div>
 
           {editorialQueue.docs.length > 0 ? (
-            <div className="card-grid">
-              {editorialQueue.docs.map((submission) => (
-                <PaperCard paper={submission} editorial key={submission.id} />
-              ))}
+            <div className="editorial-grid">
+                {editorialQueue.docs.map((submission) => (
+                    <PaperCard paper={submission} editorial compact key={submission.id} />
+                ))}
             </div>
           ) : (
             <div className="empty-state">
@@ -100,16 +102,12 @@ export default async function HomePage() {
         </div>
 
         {publishedPapers.docs.length > 0 ? (
-          <div className="card-grid">
-            {publishedPapers.docs.map((paper) => (
-              <PaperCard paper={paper} key={paper.id} />
-            ))}
-          </div>
+            <PaperCarousel papers={publishedPapers.docs} />
         ) : (
-          <div className="empty-state">
-            <h3>No published papers yet.</h3>
-            <p>Accepted papers will appear here once editors publish them.</p>
-          </div>
+            <div className="empty-state">
+                <h3>No published papers yet.</h3>
+                <p>Accepted papers will appear here once editors publish them.</p>
+            </div>
         )}
       </section>
       <Footer />

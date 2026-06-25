@@ -15,7 +15,10 @@ export function NavLinks() {
   return (
     <>
       {navItems.map((item) => {
-        const isActive = pathname === item.href || pathname.startsWith(`${item.href}`)
+        const isActive =
+            pathname === item.href ||
+            pathname.startsWith(`${item.href}/`) ||
+            (item.href === '/articles' && pathname.startsWith('/editorial'))
 
         return (
           <a className={isActive ? 'is-active' : ''} href={item.href} key={item.href}>

@@ -158,7 +158,9 @@ p {
    ========================================================================== */
 
 .site {
-    min-height: 100vh;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .hero,
@@ -175,6 +177,9 @@ p {
 
 .page-hero h1 {
     width: 80%;
+}
+.editorial-page-hero h1 {
+  color: var(--color-danger);
 }
 
 .section {
@@ -209,6 +214,7 @@ p {
 .site-footer {
   border-top: 6px solid var(--color-accent);
   border-bottom: 0;
+    margin-top: auto;
 }
 
 .site-header-inner,
@@ -321,7 +327,7 @@ p {
   color: var(--color-accent);
 }
 
-.breakdcrumbs a:hover {
+.breadcrumbs a:hover {
     color: var(--color-danger);
 }
 
@@ -331,9 +337,53 @@ p {
 }
 
 /* ==========================================================================
-   Footer
+   Carousel
    ========================================================================== */
 
+.paper-carousel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.paper-carousel-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.paper-carousel-controls button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-accent);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.paper-carousel-controls button:hover {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #fff;
+}
+
+.paper-carousel-track {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+@media (max-width: 800px) {
+  .paper-carousel-track {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
 
 .footer-links {
   width: 100%;
@@ -472,7 +522,7 @@ p {
   text-shadow: var(--text-shadow-accent-strong);
   font-size: clamp(4rem, 8vw, 6.75rem);
   line-height: 0.9;
-  letter-spacing: -0.06em;
+    letter-spacing: -.04em;
 }
         
 .hero-report-label {
@@ -622,12 +672,51 @@ button:disabled,
     box-shadow: var(--shadow-card);
 }
 
+.paper-card-compact {
+  min-height: 250px;
+}
+
+.paper-card-compact .paper-card-content {
+  width: min(62%, 440px);
+  padding: var(--space-6);
+}
+
+.paper-card-compact h3 {
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
+}
+
 .editor-card {
     border-color: rgba(59, 130, 246, 0.35);
 }
 
 .editor-section {
     border-top: 1px solid var(--color-border);
+}
+
+.editorial-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+.archive-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+.archive-grid .paper-card-compact {
+  min-height: 260px;
+}
+
+@media (max-width: 800px) {
+  .archive-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .editorial-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .empty-state {
@@ -782,6 +871,134 @@ button:disabled,
 
   .paper-card-image::before {
     display: none;
+  }
+}
+
+/* ==========================================================================
+   Editorial Toolbar
+   ========================================================================== */
+.editorial-toolbar {
+  width: min(100%, var(--container));
+  margin: var(--space-6) auto 0;
+  padding-inline: var(--space-page-x);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.editorial-toolbar-tabs {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.editorial-toolbar .button.is-active {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #fff;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Editorial Submission Form
+   ========================================================================== */
+.editorial-edit-form {
+  width: min(100%, var(--container));
+  margin: var(--space-8) auto;
+  padding-inline: var(--space-page-x);
+  display: grid;
+  gap: var(--space-6);
+}
+
+/* ==========================================================================
+   Paper Preview
+   ========================================================================== */
+
+.paper-preview {
+  width: min(100%, var(--container));
+  margin-inline: auto;
+  padding: var(--space-8) var(--space-page-x);
+}
+
+.paper-preview-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: var(--space-8);
+  align-items: center;
+  margin-bottom: var(--space-10);
+}
+
+.paper-preview-subtitle {
+  color: var(--color-danger);
+  font-family: var(--font-serif);
+  font-size: var(--font-size-xl);
+}
+
+.paper-preview-authors {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.paper-preview-image img {
+  width: 100%;
+  border-radius: var(--radius-xl);
+  border: 2px solid var(--color-accent);
+  box-shadow: var(--shadow-card);
+}
+
+.paper-preview-editorial h1 {
+  color: var(--color-danger);
+}
+
+.paper-preview-editorial .paper-preview-image img {
+  border-color: var(--color-danger);
+}
+
+.paper-preview-section {
+  margin-top: var(--space-8);
+}
+
+.paper-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.paper-keywords span {
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-pill);
+  padding: 0.35rem 0.75rem;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+}
+
+.supporting-image-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+.supporting-image-grid figure {
+  margin: 0;
+}
+
+.supporting-image-grid img {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.supporting-image-grid figcaption {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 800px) {
+  .paper-preview-hero,
+  .supporting-image-grid {
+    grid-template-columns: 1fr;
   }
 }
 

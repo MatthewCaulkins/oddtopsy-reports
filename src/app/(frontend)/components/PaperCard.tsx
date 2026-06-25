@@ -3,6 +3,7 @@ import type { Submission } from '@/payload-types'
 type PaperCardProps = {
   paper: Submission
   editorial?: boolean
+  compact?: boolean
 }
 
 function getImageUrl(paper: Submission) {
@@ -27,7 +28,7 @@ function getAuthors(paper: Submission) {
   return [lead, ...coAuthors].filter(Boolean).join(', ')
 }
 
-export function PaperCard({ paper, editorial = false }: PaperCardProps) {
+export function PaperCard({ paper, editorial = false, compact = false }: PaperCardProps) {
   const imageUrl = getImageUrl(paper)
   const focusAreas = getFocusAreas(paper)
   const href = editorial
@@ -35,7 +36,12 @@ export function PaperCard({ paper, editorial = false }: PaperCardProps) {
     : `/articles/${paper.slug || paper.id}`
 
   return (
-    <a className={`paper-card paper-card-featured ${editorial ? 'editor-card' : ''}`} href={href}>
+    <a
+        className={`paper-card paper-card-featured ${editorial ? 'editor-card' : ''} ${
+            compact ? 'paper-card-compact' : ''
+        }`}
+        href={href}
+    >
       <div className="paper-card-content">
         <h3>{paper.title}</h3>
 

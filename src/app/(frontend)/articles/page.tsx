@@ -56,11 +56,9 @@ export default async function ArticlesPage() {
 
           {editorialQueue.docs.length > 0 ? (
             <div className="card-grid">
-              <div className="card-grid">
                 {editorialQueue.docs.map((submission) => (
                   <PaperCard paper={submission} editorial key={submission.id} />
                 ))}
-              </div>
             </div>
           ) : (
             <div className="empty-state">
@@ -78,13 +76,11 @@ export default async function ArticlesPage() {
         </div>
 
         {publishedPapers.docs.length > 0 ? (
-          <div className="card-grid">
-            <div className="card-grid">
-              {publishedPapers.docs.map((paper) => (
-                <PaperCard paper={paper} key={paper.id} />
-              ))}
+            <div className="archive-grid">
+                {publishedPapers.docs.map((paper) => (
+                    <PaperCard paper={paper} compact key={paper.id} />
+                ))}
             </div>
-          </div>
         ) : (
           <div className="empty-state">
             <h3>No published papers yet.</h3>

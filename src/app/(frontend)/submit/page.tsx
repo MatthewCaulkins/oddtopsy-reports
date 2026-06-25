@@ -2,7 +2,8 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
-import { SubmitForm } from './SubmitForm'
+import { SubmissionForm } from '../components/submission-form/SubmissionForm'
+import { submitPaper } from './actions'
 
 export default async function SubmitPage() {
   const payload = await getPayload({ config })
@@ -24,7 +25,12 @@ export default async function SubmitPage() {
           review the submission and follow up if revisions are needed.
         </p>
 
-        <SubmitForm focusAreas={focusAreas.docs} />
+        <SubmissionForm
+          mode="create"
+          focusAreas={focusAreas.docs}
+          action={submitPaper}
+          submitLabel="Submit Paper"
+        />
       </section>
 
       <Footer />
