@@ -14,7 +14,7 @@ export async function approveSubmission(formData: FormData) {
     collection: 'submissions',
     id,
     data: {
-      status: 'published',
+      workflowStatus: 'published',
       publishedDate: new Date().toISOString(),
     },
   })
@@ -127,35 +127,29 @@ export async function updateSubmission(formData: FormData) {
     })
 
     if (newSupportingImages.length > 0) {
-        const existingSubmission = await payload.findByID({
-            collection: 'submissions',
-            id,
-            depth: 0,
-        })
+      const existingSubmission = await payload.findByID({
+        collection: 'submissions',
+        id,
+        depth: 0,
+      })
 
-        const existingSupportingImages =
-            existingSubmission.supportingImages
-            ?.map((item) => {
-                if (!item?.image) return null
+      const existingSupportingImages =
+        existingSubmission.supportingImages
+          ?.map((item) => {
+            if (!item?.image) return null
 
-                const imageID =
-                typeof item.image === 'object'
-                    ? item.image.id
-                    : item.image
+            const imageID = typeof item.image === 'object' ? item.image.id : item.image
 
-                if (!imageID) return null
+            if (!imageID) return null
 
-                return {
-                image: imageID,
-                caption: item.caption || '',
-                }
-            })
-            .filter((item): item is { image: number; caption: string } => item !== null) || []
+            return {
+              image: imageID,
+              caption: item.caption || '',
+            }
+          })
+          .filter((item): item is { image: number; caption: string } => item !== null) || []
 
-        data.supportingImages = [
-            ...existingSupportingImages,
-            ...newSupportingImages,
-        ]
+      data.supportingImages = [...existingSupportingImages, ...newSupportingImages]
     }
   }
 

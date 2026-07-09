@@ -1,67 +1,167 @@
-# Payload Blank Template
+# Oddtopsy Reports
 
-This template comes configured with the bare minimum to get started on anything you need.
+Oddtopsy Reports is a peer-reviewed digital journal for anatomical pathology and cadaveric education. It provides a modern submission and editorial workflow for case reports, including rich-text authoring, PDF uploads, editorial review, revision history, and publication.
 
-## Quick start
+Built with:
 
-This template can be deployed directly from our Cloud hosting and it will setup MongoDB and cloud S3 object storage for media.
+- Next.js 16
+- Payload CMS 3
+- PostgreSQL
+- Lexical Editor
+- Docker
+- TypeScript
 
-## Quick Start - local setup
+---
 
-To spin up this template locally, follow these steps:
+## Screenshots
 
-### Clone
+### Homepage
 
-After you click the `Deploy` button above, you'll want to have standalone copy of this repo on your machine. If you've already cloned this repo, skip to [Development](#development).
+![Homepage](docs/home.png)
 
-### Development
+## Design Goals
 
-1. First [clone the repo](#clone) if you have not done so already
-2. `cd my-project && cp .env.example .env` to copy the example environment variables. You'll need to add the `MONGODB_URL` from your Cloud project to your `.env` if you want to use S3 storage and the MongoDB database that was created for you.
+Oddtopsy Reports was designed as a lightweight alternative to traditional academic publishing platforms. The focus is on:
 
-3. `pnpm install && pnpm dev` to install dependencies and start the dev server
-4. open `http://localhost:3000` to open the app in your browser
+- streamlined editorial workflows
+- long-term maintainability
+- clean separation between author and editor experiences
+- modern responsive UI
+- minimal administrative overhead
 
-That's it! Changes made in `./src` will be reflected in your app. Follow the on-screen instructions to login and create your first admin user. Then check out [Production](#production) once you're ready to build and serve your app, and [Deployment](#deployment) when you're ready to go live.
+## Features
 
-#### Docker (Optional)
+### Authors
 
-If you prefer to use Docker for local development instead of a local MongoDB instance, the provided docker-compose.yml file can be used.
+- Submit manuscripts as either:
+  - Rich text (Lexical editor)
+  - PDF upload
+- Upload featured and supporting images
+- Edit submissions
+- Draft support
+- Submission workflow tracking
 
-To do so, follow these steps:
+### Editorial
 
-- Modify the `MONGODB_URL` in your `.env` file to `mongodb://127.0.0.1/<dbname>`
-- Modify the `docker-compose.yml` file's `MONGODB_URL` to match the above `<dbname>`
-- Run `docker-compose up` to start the database, optionally pass `-d` to run in the background.
+- Editorial review queue
+- Preview mode
+- Edit mode
+- Publish workflow
+- Payload version history
+- Revision history
 
-## How it works
+### Public Site
 
-The Payload config is tailored specifically to the needs of most websites. It is pre-configured in the following ways:
+- Homepage
+- Featured papers
+- Papers archive
+- Individual article pages
+- Responsive design
 
-### Collections
+---
 
-See the [Collections](https://payloadcms.com/docs/configuration/collections) docs for details on how to extend this functionality.
+## Development
 
-- #### Users (Authentication)
+### Requirements
 
-  Users are auth-enabled collections that have access to the admin panel.
+- Docker Desktop
 
-  For additional help, see the official [Auth Example](https://github.com/payloadcms/payload/tree/3.x/examples/auth) or the [Authentication](https://payloadcms.com/docs/authentication/overview#authentication-overview) docs.
+### Local Setup
 
-- #### Media
+```bash
+git clone <repo>
+cd oddtopsy-reports
+cp .env.example .env
+docker compose up --build
+```
 
-  This is the uploads enabled collection. It features pre-configured sizes, focal point and manual resizing to help you manage your pictures.
+After the application starts:
 
-### Docker
+```bash
+docker compose exec payload npm run seed:focus-areas
+```
 
-Alternatively, you can use [Docker](https://www.docker.com) to spin up this template locally. To do so, follow these steps:
+Visit:
 
-1. Follow [steps 1 and 2 from above](#development), the docker-compose file will automatically use the `.env` file in your project root
-1. Next run `docker-compose up`
-1. Follow [steps 4 and 5 from above](#development) to login and create your first admin user
+```
+http://localhost:3000
+```
 
-That's it! The Docker instance will help you get up and running quickly while also standardizing the development environment across your teams.
+On first launch you'll be prompted to create an administrator account.
 
-## Questions
+---
 
-If you have any issues or questions, reach out to us on [Discord](https://discord.com/invite/payload) or start a [GitHub discussion](https://github.com/payloadcms/payload/discussions).
+## Available Scripts
+
+```bash
+pnpm dev
+pnpm build
+pnpm lint
+pnpm seed:focus-areas
+```
+
+---
+
+## Project Structure
+
+```
+src/
+    app/
+    collections/
+    components/
+    hooks/
+    scripts/
+    utilities/
+```
+
+---
+
+## Current Architecture
+
+Submission lifecycle:
+
+```
+Draft
+    ↓
+Submitted
+    ↓
+In Review
+    ↓
+Revision Requested
+    ↓
+Approved
+    ↓
+Published
+```
+
+Payload Version History stores every editorial revision.
+
+---
+
+## Roadmap
+
+Current sprint:
+
+- Payload Version History
+- Search
+- Filters
+- Pagination
+- Homepage carousel
+- Editorial Board
+
+Future:
+
+- Reviewer notes
+- Author revision requests
+- Rich text enhancements
+- Author profiles
+- DOI support
+- Subscriptions
+- Payments
+- Article metrics
+
+---
+
+## License
+
+Private repository.

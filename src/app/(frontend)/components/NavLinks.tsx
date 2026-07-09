@@ -16,12 +16,18 @@ export function NavLinks() {
     <>
       {navItems.map((item) => {
         const isActive =
-            pathname === item.href ||
-            pathname.startsWith(`${item.href}/`) ||
-            (item.href === '/articles' && pathname.startsWith('/editorial'))
+          pathname === item.href ||
+          pathname.startsWith(`${item.href}/`) ||
+          (item.href === '/articles' && pathname.startsWith('/editorial'))
+
+        const hasParent = item.href === '/articles' && pathname.startsWith('/editorial')
+
+        const className = [isActive && 'is-active', hasParent && 'has-parent']
+          .filter(Boolean)
+          .join(' ')
 
         return (
-          <a className={isActive ? 'is-active' : ''} href={item.href} key={item.href}>
+          <a className={className} href={item.href} key={item.href}>
             {item.label}
           </a>
         )

@@ -20,7 +20,7 @@ export default async function HomePage() {
     ? await payload.find({
         collection: 'submissions',
         where: {
-          status: {
+          workflowStatus: {
             not_equals: 'published',
           },
         },
@@ -33,7 +33,7 @@ export default async function HomePage() {
   const publishedPapers = await payload.find({
     collection: 'submissions',
     where: {
-      status: {
+      workflowStatus: {
         equals: 'published',
       },
     },
@@ -82,9 +82,9 @@ export default async function HomePage() {
 
           {editorialQueue.docs.length > 0 ? (
             <div className="editorial-grid">
-                {editorialQueue.docs.map((submission) => (
-                    <PaperCard paper={submission} editorial compact key={submission.id} />
-                ))}
+              {editorialQueue.docs.map((submission) => (
+                <PaperCard paper={submission} editorial compact key={submission.id} />
+              ))}
             </div>
           ) : (
             <div className="empty-state">
@@ -102,12 +102,12 @@ export default async function HomePage() {
         </div>
 
         {publishedPapers.docs.length > 0 ? (
-            <PaperCarousel papers={publishedPapers.docs} />
+          <PaperCarousel papers={publishedPapers.docs} />
         ) : (
-            <div className="empty-state">
-                <h3>No published papers yet.</h3>
-                <p>Accepted papers will appear here once editors publish them.</p>
-            </div>
+          <div className="empty-state">
+            <h3>No published papers yet.</h3>
+            <p>Accepted papers will appear here once editors publish them.</p>
+          </div>
         )}
       </section>
       <Footer />

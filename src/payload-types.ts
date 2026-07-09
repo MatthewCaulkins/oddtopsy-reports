@@ -223,9 +223,17 @@ export interface Submission {
       }[]
     | null;
   authorMessage?: string | null;
-  status: 'submitted' | 'under_review' | 'in_progress' | 'revision_requested' | 'accepted' | 'rejected' | 'published';
+  workflowStatus:
+    | 'submitted'
+    | 'under_review'
+    | 'in_progress'
+    | 'revision_requested'
+    | 'accepted'
+    | 'rejected'
+    | 'published';
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -542,9 +550,10 @@ export interface SubmissionsSelect<T extends boolean = true> {
         id?: T;
       };
   authorMessage?: T;
-  status?: T;
+  workflowStatus?: T;
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

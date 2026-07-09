@@ -7,9 +7,14 @@ type SubmissionSiblingData = {
 export const Submissions: CollectionConfig = {
   slug: 'submissions',
 
+  versions: {
+    drafts: true,
+    maxPerDoc: 25,
+  },
+
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'submissionType', 'status', 'createdAt'],
+    defaultColumns: ['title', 'submissionType', 'workflowStatus', 'createdAt'],
   },
 
   access: {
@@ -18,7 +23,7 @@ export const Submissions: CollectionConfig = {
       if (req.user) return true
 
       return {
-        status: {
+        workflowStatus: {
           equals: 'published',
         },
       }
@@ -111,7 +116,7 @@ export const Submissions: CollectionConfig = {
       name: 'publishedDate',
       type: 'date',
       admin: {
-        condition: (_, siblingData) => siblingData?.status === 'published',
+        condition: (_, siblingData) => siblingData?.workflowStatus === 'published',
       },
     },
     {
@@ -230,7 +235,7 @@ export const Submissions: CollectionConfig = {
       type: 'textarea',
     },
     {
-      name: 'status',
+      name: 'workflowStatus',
       type: 'select',
       required: true,
       defaultValue: 'submitted',

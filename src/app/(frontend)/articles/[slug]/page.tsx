@@ -22,7 +22,7 @@ export default async function SinglePaperPage({ params }: Props) {
     where: {
       and: [
         {
-          status: {
+          workflowStatus: {
             equals: 'published',
           },
         },

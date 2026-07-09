@@ -43,7 +43,9 @@ export function PaperPreview({ paper, editorial = false }: PaperPreviewProps) {
   const authors = getAuthors(paper)
 
   return (
-    <article className={`paper-preview ${editorial ? 'paper-preview-editorial' : ''}`}>
+    <article className={`paper-preview`}>
+      {' '}
+      {/* ${editorial ? 'paper-preview-editorial' : ''} */}
       <section className="paper-preview-hero">
         <div className="paper-preview-heading">
           <h1>{paper.title}</h1>
@@ -64,12 +66,12 @@ export function PaperPreview({ paper, editorial = false }: PaperPreviewProps) {
         </div>
 
         {heroImageUrl && (
-          <div className="paper-preview-image">
-            <img src={heroImageUrl} alt="" />
-          </div>
+          <div
+            className="paper-preview-image"
+            style={{ backgroundImage: `url(${heroImageUrl})` }}
+          />
         )}
       </section>
-
       {paper.abstract && (
         <section className="paper-preview-section">
           <div className="section-heading-rule">
@@ -79,7 +81,6 @@ export function PaperPreview({ paper, editorial = false }: PaperPreviewProps) {
           <p>{paper.abstract}</p>
         </section>
       )}
-
       {keywords.length > 0 && (
         <section className="paper-preview-section">
           <div className="paper-keywords">
@@ -89,7 +90,6 @@ export function PaperPreview({ paper, editorial = false }: PaperPreviewProps) {
           </div>
         </section>
       )}
-
       {pdfUrl && (
         <section className="paper-preview-section">
           <div className="section-heading-rule">
@@ -99,7 +99,6 @@ export function PaperPreview({ paper, editorial = false }: PaperPreviewProps) {
           <iframe className="pdf-frame" src={pdfUrl} title={paper.title} />
         </section>
       )}
-
       {paper.supportingImages && paper.supportingImages.length > 0 && (
         <section className="paper-preview-section">
           <div className="section-heading-rule">

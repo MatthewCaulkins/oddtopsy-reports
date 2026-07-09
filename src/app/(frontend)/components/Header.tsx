@@ -24,9 +24,7 @@ export async function Header() {
   return (
     <header className="site-header">
       <div className="site-header-inner">
-        <a href="/" className="site-logo">
-          <img src="/branding/icon.png" alt="Oddtopsy Reports" width={42} height={42} />
-        </a>
+        <a href="/" className="site-logo" aria-label="Oddtopsy Reports" />
 
         <nav className="site-nav">
           <NavLinks />

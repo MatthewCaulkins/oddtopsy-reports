@@ -178,7 +178,7 @@ export async function submitPaper(formData: FormData) {
       supportingImages: supportingImageData,
       mediaNotes,
       authorMessage,
-      status: 'submitted',
+      workflowStatus: 'submitted',
     },
   })
 

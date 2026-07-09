@@ -1,5 +1,5 @@
-import { Submission } from "@/payload-types";
-import { approveSubmission } from "../editorial/submissions/[id]/actions";
+import { Submission } from '@/payload-types'
+import { approveSubmission } from '../editorial/submissions/[id]/actions'
 
 type EditorialToolbarProps = {
   submission: Submission

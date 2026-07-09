@@ -5,6 +5,7 @@ export function Footer() {
     <footer className="site-footer">
       <div className="site-footer-inner">
         <div className="footer-links">
+          <a href="/">Home</a>
           <a href="/articles">Papers</a>
           <a href="/submit">Submit</a>
           <a href="/about">About</a>

@@ -17,7 +17,7 @@ export default async function ArticlesPage() {
     ? await payload.find({
         collection: 'submissions',
         where: {
-          status: {
+          workflowStatus: {
             not_equals: 'published',
           },
         },
@@ -29,7 +29,7 @@ export default async function ArticlesPage() {
   const publishedPapers = await payload.find({
     collection: 'submissions',
     where: {
-      status: {
+      workflowStatus: {
         equals: 'published',
       },
     },
@@ -56,9 +56,9 @@ export default async function ArticlesPage() {
 
           {editorialQueue.docs.length > 0 ? (
             <div className="card-grid">
-                {editorialQueue.docs.map((submission) => (
-                  <PaperCard paper={submission} editorial key={submission.id} />
-                ))}
+              {editorialQueue.docs.map((submission) => (
+                <PaperCard paper={submission} editorial key={submission.id} />
+              ))}
             </div>
           ) : (
             <div className="empty-state">
@@ -76,11 +76,11 @@ export default async function ArticlesPage() {
         </div>
 
         {publishedPapers.docs.length > 0 ? (
-            <div className="archive-grid">
-                {publishedPapers.docs.map((paper) => (
-                    <PaperCard paper={paper} compact key={paper.id} />
-                ))}
-            </div>
+          <div className="archive-grid">
+            {publishedPapers.docs.map((paper) => (
+              <PaperCard paper={paper} compact key={paper.id} />
+            ))}
+          </div>
         ) : (
           <div className="empty-state">
             <h3>No published papers yet.</h3>

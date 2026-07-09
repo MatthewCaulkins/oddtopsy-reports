@@ -13,6 +13,20 @@ services:
     env_file:
       - .env
 
+  seed:
+    image: node:22-alpine
+    volumes:
+      - .:/home/node/app
+      - node_modules:/home/node/app/node_modules
+    working_dir: /home/node/app/
+    command: sh -c "npm install -g pnpm@10.23.0 --force && pnpm install && pnpm run seed:focus-areas"
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    profiles:
+      - seed
+      
   postgres:
     image: postgres:16
     restart: always
