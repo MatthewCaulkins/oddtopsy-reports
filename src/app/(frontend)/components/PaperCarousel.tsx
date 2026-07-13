@@ -30,13 +30,8 @@ export function PaperCarousel({ papers }: PaperCarouselProps) {
   return (
     <div className="paper-carousel">
       <div className="paper-carousel-controls">
-        <button type="button" onClick={previous} aria-label="Previous papers">
-          ‹
-        </button>
-
-        <button type="button" onClick={next} aria-label="Next papers">
-          ›
-        </button>
+        <button className="prev" type="button" onClick={previous} aria-label="Previous papers" />
+        <button className="next" type="button" onClick={next} aria-label="Next papers" />
       </div>
 
       <div className="paper-carousel-track">

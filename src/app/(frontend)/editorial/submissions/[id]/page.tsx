@@ -68,7 +68,7 @@ export default async function EditorialSubmissionPage({ params, searchParams }: 
 
       {mode === 'edit' ? (
         <section className="page-hero page-editor">
-          <VersionHistory versions={versions.docs} />
+          <VersionHistory submissionId={submission.id} versions={versions.docs} />
 
           <SubmissionForm
             mode="edit"

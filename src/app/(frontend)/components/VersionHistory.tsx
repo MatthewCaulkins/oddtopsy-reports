@@ -1,18 +1,16 @@
 import type { Submission } from '@/payload-types'
-
-type VersionDoc = {
-  id: string | number
-  updatedAt?: string
-  createdAt?: string
-  version?: Partial<Submission>
-}
+import { getVersionChanges, type VersionDoc } from './version-history/versionUtils'
 
 type VersionHistoryProps = {
+  submissionId: string | number
   versions: VersionDoc[]
 }
 
-export function VersionHistory({ versions }: VersionHistoryProps) {
+export function VersionHistory({ submissionId, versions }: VersionHistoryProps) {
   if (!versions.length) return null
+
+  // Payload returns newest first. Comparison is easier oldest first.
+  const chronologicalVersions = [...versions].reverse()
 
   return (
     <section className="version-history">
@@ -21,15 +19,29 @@ export function VersionHistory({ versions }: VersionHistoryProps) {
       </div>
 
       <div className="version-list">
-        {versions.map((item, index) => {
+        {[...chronologicalVersions].reverse().map((item) => {
+          const chronologicalIndex = chronologicalVersions.findIndex(
+            (version) => version.id === item.id,
+          )
+
+          const versionNumber = chronologicalIndex + 1
+          const previous = chronologicalVersions[chronologicalIndex - 1]
+
+          const changes = getVersionChanges(previous?.version, item.version)
+
           const date = item.updatedAt || item.createdAt
 
           return (
             <article className="version-card" key={item.id}>
-              <strong>Version {versions.length - index}</strong>
+              <a
+                className="version-card-title"
+                href={`/editorial/submissions/${submissionId}/history?version=${item.id}`}
+              >
+                Version {versionNumber}
+              </a>
 
               {date && (
-                <span>
+                <div className="version-card-date">
                   {new Date(date).toLocaleString(undefined, {
                     month: 'short',
                     day: 'numeric',
@@ -37,10 +49,26 @@ export function VersionHistory({ versions }: VersionHistoryProps) {
                     hour: 'numeric',
                     minute: '2-digit',
                   })}
-                </span>
+                </div>
               )}
 
-              {item.version?.title && <p>{item.version.title}</p>}
+              <div className="version-card-summary">
+                {previous ? (
+                  changes.length > 0 ? (
+                    <ul className="version-change-summary">
+                      {changes.slice(0, 3).map((change) => (
+                        <li key={change.field}>{change.label} changed</li>
+                      ))}
+
+                      {changes.length > 3 && <li>+{changes.length - 3} more changes</li>}
+                    </ul>
+                  ) : (
+                    <p>No tracked field changes.</p>
+                  )
+                ) : (
+                  <p>Initial submission created.</p>
+                )}
+              </div>
             </article>
           )
         })}

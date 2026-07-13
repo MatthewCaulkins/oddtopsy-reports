@@ -6,6 +6,209 @@ import { getPayload } from 'payload'
 
 import config from '@/payload.config'
 
+import { headers as getHeaders } from 'next/headers'
+
+import type { Submission } from '@/payload-types'
+import {
+  getVersionChanges,
+  trackedVersionFields,
+} from '@/app/(frontend)/components/version-history/versionUtils'
+
+type RestorableSubmissionData = Partial<
+  Pick<
+    Submission,
+    | 'title'
+    | 'subtitle'
+    | 'abstract'
+    | 'focusArea'
+    | 'keywords'
+    | 'findingDate'
+    | 'location'
+    | 'mediaNotes'
+    | 'seoTitle'
+    | 'seoDescription'
+    | 'featuredImage'
+    | 'publishedDate'
+    | 'featured'
+    | 'correspondingAuthor'
+    | 'leadAuthor'
+    | 'coAuthors'
+    | 'submissionType'
+    | 'manuscriptPDF'
+    | 'manuscriptBody'
+    | 'supportingImages'
+    | 'authorMessage'
+    | 'workflowStatus'
+  >
+>
+
+function getRelationshipID(value: unknown): number | string | null {
+  if (typeof value === 'number' || typeof value === 'string') {
+    return value
+  }
+
+  if (
+    value &&
+    typeof value === 'object' &&
+    'id' in value &&
+    (typeof value.id === 'number' || typeof value.id === 'string')
+  ) {
+    return value.id
+  }
+
+  return null
+}
+
+function normalizeRestoreValue(field: keyof RestorableSubmissionData, value: unknown): unknown {
+  switch (field) {
+    case 'featuredImage':
+    case 'manuscriptPDF':
+      return getRelationshipID(value)
+
+    case 'focusArea':
+      return Array.isArray(value)
+        ? value.map(getRelationshipID).filter((id): id is string | number => id !== null)
+        : []
+
+    case 'supportingImages':
+      return Array.isArray(value)
+        ? value
+            .map((item) => {
+              if (!item || typeof item !== 'object') {
+                return null
+              }
+
+              const image = 'image' in item ? getRelationshipID(item.image) : null
+
+              if (image === null) return null
+
+              return {
+                image,
+                caption: 'caption' in item ? String(item.caption ?? '') : '',
+              }
+            })
+            .filter(
+              (
+                item,
+              ): item is {
+                image: string | number
+                caption: string
+              } => item !== null,
+            )
+        : []
+
+    case 'keywords':
+      return Array.isArray(value)
+        ? value.map((item) => ({
+            keyword:
+              item && typeof item === 'object' && 'keyword' in item
+                ? String(item.keyword ?? '')
+                : '',
+          }))
+        : []
+
+    case 'coAuthors':
+      return Array.isArray(value)
+        ? value.map((author) => ({
+            name:
+              author && typeof author === 'object' && 'name' in author
+                ? String(author.name ?? '')
+                : '',
+            affiliation:
+              author && typeof author === 'object' && 'affiliation' in author
+                ? String(author.affiliation ?? '')
+                : '',
+          }))
+        : []
+
+    default:
+      return value ?? null
+  }
+}
+
+export async function restoreSubmissionVersion(formData: FormData) {
+  const submissionId = String(formData.get('submissionId') || '')
+
+  const versionId = String(formData.get('versionId') || '')
+
+  if (!submissionId || !versionId) {
+    throw new Error('Submission ID and version ID are required.')
+  }
+
+  const headers = await getHeaders()
+  const payload = await getPayload({ config })
+
+  const { user } = await payload.auth({ headers })
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  const [currentSubmission, selectedVersion] = await Promise.all([
+    payload.findByID({
+      collection: 'submissions',
+      id: submissionId,
+      depth: 0,
+      user,
+      overrideAccess: false,
+    }),
+
+    payload.findVersionByID({
+      collection: 'submissions',
+      id: versionId,
+      depth: 0,
+      user,
+      overrideAccess: false,
+    }),
+  ])
+
+  if (String(selectedVersion.parent) !== submissionId) {
+    throw new Error('The selected version does not belong to this submission.')
+  }
+
+  const historicalSubmission = selectedVersion.version
+
+  if (!historicalSubmission) {
+    throw new Error('The selected version has no restorable data.')
+  }
+
+  const changes = getVersionChanges(currentSubmission, historicalSubmission)
+
+  if (changes.length === 0) {
+    redirect(`/editorial/submissions/${submissionId}/history`)
+  }
+
+  const restoreData: Record<string, unknown> = {}
+
+  for (const change of changes) {
+    if (!trackedVersionFields.includes(change.field)) {
+      continue
+    }
+
+    restoreData[change.field] = normalizeRestoreValue(
+      change.field,
+      historicalSubmission[change.field],
+    )
+  }
+
+  await payload.update({
+    collection: 'submissions',
+    id: submissionId,
+    data: restoreData,
+    user,
+    overrideAccess: false,
+  })
+
+  revalidatePath(`/editorial/submissions/${submissionId}`)
+
+  revalidatePath(`/editorial/submissions/${submissionId}/history`)
+
+  revalidatePath('/')
+  revalidatePath('/articles')
+
+  redirect(`/editorial/submissions/${submissionId}/history?restored=1`)
+}
+
 export async function approveSubmission(formData: FormData) {
   const payload = await getPayload({ config })
   const id = String(formData.get('id') || '')
@@ -126,31 +329,30 @@ export async function updateSubmission(formData: FormData) {
       depth: 0,
     })
 
-    if (newSupportingImages.length > 0) {
-      const existingSubmission = await payload.findByID({
-        collection: 'submissions',
-        id,
-        depth: 0,
-      })
+    const existingSupportingImages =
+      existingSubmission.supportingImages
+        ?.map((item) => {
+          if (!item?.image) return null
 
-      const existingSupportingImages =
-        existingSubmission.supportingImages
-          ?.map((item) => {
-            if (!item?.image) return null
+          const imageID = typeof item.image === 'object' ? item.image.id : item.image
 
-            const imageID = typeof item.image === 'object' ? item.image.id : item.image
+          if (!imageID) return null
 
-            if (!imageID) return null
+          return {
+            image: imageID,
+            caption: item.caption || '',
+          }
+        })
+        .filter(
+          (
+            item,
+          ): item is {
+            image: number
+            caption: string
+          } => item !== null,
+        ) || []
 
-            return {
-              image: imageID,
-              caption: item.caption || '',
-            }
-          })
-          .filter((item): item is { image: number; caption: string } => item !== null) || []
-
-      data.supportingImages = [...existingSupportingImages, ...newSupportingImages]
-    }
+    data.supportingImages = [...existingSupportingImages, ...newSupportingImages]
   }
 
   await payload.update({
