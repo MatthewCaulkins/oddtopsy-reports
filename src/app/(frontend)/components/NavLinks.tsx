@@ -15,12 +15,15 @@ export function NavLinks() {
   return (
     <>
       {navItems.map((item) => {
-        const isActive =
-          pathname === item.href ||
-          pathname.startsWith(`${item.href}/`) ||
-          (item.href === '/articles' && pathname.startsWith('/editorial'))
+        const isPapersItem = item.href === '/articles'
 
-        const hasParent = item.href === '/articles' && pathname.startsWith('/editorial')
+        const isPapersChild =
+          isPapersItem && (pathname.startsWith('/articles/') || pathname.startsWith('/editorial'))
+
+        const isActive =
+          pathname === item.href || pathname.startsWith(`${item.href}/`) || isPapersChild
+
+        const hasParent = isPapersChild
 
         const className = [isActive && 'is-active', hasParent && 'has-parent']
           .filter(Boolean)

@@ -4,8 +4,14 @@ import config from '@/payload.config'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 
+import { RichText } from '@payloadcms/richtext-lexical/react'
+
 export default async function AboutPage() {
   const payload = await getPayload({ config })
+
+  const about = await payload.findGlobal({
+    slug: 'about',
+  })
 
   const editors = await payload.find({
     collection: 'users',
@@ -31,18 +37,7 @@ export default async function AboutPage() {
       </section>
 
       <section className="section">
-        <div className="content-panel">
-          <h2>Why we exist</h2>
-          <p>
-            Traditional publication can be expensive, slow, and inaccessible for focused anatomical
-            observations. Oddtopsy Reports is designed to make sharing meaningful findings easier
-            for educators, clinicians, students, and researchers.
-          </p>
-          <p>
-            Our goal is to support clear reporting, practical review, and broader access to unusual
-            anatomical and autopsy-related discoveries.
-          </p>
-        </div>
+        <RichText data={about.whyWeExist} />
       </section>
 
       <section className="section">

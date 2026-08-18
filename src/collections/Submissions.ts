@@ -1,4 +1,12 @@
 import type { CollectionConfig } from 'payload'
+import { richTextEditor } from '@/editor/richTextEditor'
+
+import {
+  lexicalEditor,
+  FixedToolbarFeature,
+  HeadingFeature,
+  LinkFeature,
+} from '@payloadcms/richtext-lexical'
 
 type SubmissionSiblingData = {
   submissionType?: 'upload' | 'editor'
@@ -202,13 +210,23 @@ export const Submissions: CollectionConfig = {
     },
     {
       name: 'manuscriptBody',
-      type: 'richText',
+      type: 'textarea',
+
       admin: {
         condition: (_, siblingData) => siblingData?.submissionType === 'editor',
-        description: 'Enter or edit the manuscript directly in the editor.',
+
+        description: 'HTML manuscript content created by the editor.',
+
+        components: {
+          Field: '@/components/admin/JoditField',
+        },
       },
+
       validate: (value: unknown, { siblingData }: { siblingData: SubmissionSiblingData }) => {
-        if (siblingData?.submissionType === 'editor' && !value) {
+        if (
+          siblingData?.submissionType === 'editor' &&
+          (!value || typeof value !== 'string' || !value.trim())
+        ) {
           return 'Please enter the manuscript text.'
         }
 

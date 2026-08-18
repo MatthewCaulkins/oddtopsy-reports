@@ -13,11 +13,15 @@ export function PaperCarousel({ papers }: PaperCarouselProps) {
 
   if (papers.length === 0) return null
 
-  const visible = papers.slice(index, index + 2)
+  const visible = [
+    papers[(index - 1 + papers.length) % papers.length],
+    papers[index],
+    papers[(index + 1) % papers.length],
+  ]
 
-  if (visible.length < 2 && papers.length > 1) {
-    visible.push(...papers.slice(0, 2 - visible.length))
-  }
+  // if (visible.length < 2 && papers.length > 1) {
+  //   visible.push(...papers.slice(0, 2 - visible.length))
+  // }
 
   function previous() {
     setIndex((current) => (current === 0 ? Math.max(papers.length - 1, 0) : current - 1))
@@ -29,16 +33,34 @@ export function PaperCarousel({ papers }: PaperCarouselProps) {
 
   return (
     <div className="paper-carousel">
-      <div className="paper-carousel-controls">
-        <button className="prev" type="button" onClick={previous} aria-label="Previous papers" />
-        <button className="next" type="button" onClick={next} aria-label="Next papers" />
+      <button
+        className="paper-carousel-arrow prev"
+        type="button"
+        onClick={previous}
+        aria-label="Previous paper"
+      />
+
+      <div className="paper-carousel-viewport">
+        <div className="paper-carousel-track">
+          {visible.map((paper, visibleIndex) => (
+            <div
+              className={['paper-carousel-slide', visibleIndex === 1 && 'is-active']
+                .filter(Boolean)
+                .join(' ')}
+              key={`${paper.id}-${index}-${visibleIndex}`}
+            >
+              <PaperCard paper={paper} compact />
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="paper-carousel-track">
-        {visible.map((paper) => (
-          <PaperCard paper={paper} compact key={`${paper.id}-${index}`} />
-        ))}
-      </div>
+      <button
+        className="paper-carousel-arrow next"
+        type="button"
+        onClick={next}
+        aria-label="Next paper"
+      />
     </div>
   )
 }

@@ -136,10 +136,10 @@ export function getVersionChanges(
   if (!current) return []
 
   return trackedVersionFields.flatMap((field) => {
-    const before = previous?.[field]
-    const after = current[field]
+    const rawBefore = previous?.[field]
+    const rawAfter = current[field]
 
-    if (valuesMatch(field, before, after)) {
+    if (valuesMatch(field, rawBefore, rawAfter)) {
       return []
     }
 
@@ -147,9 +147,21 @@ export function getVersionChanges(
       {
         field,
         label: fieldLabels[field],
-        before: normalizeValue(field, before),
-        after: normalizeValue(field, after),
+        before: rawBefore,
+        after: rawAfter,
       },
     ]
   })
+}
+
+export function formatVersionDate(value: string) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'America/New_York',
+    timeZoneName: 'short',
+  }).format(new Date(value))
 }

@@ -47,8 +47,8 @@ export default async function EditorialSubmissionPage({ params, searchParams }: 
         equals: submission.id,
       },
     },
-    sort: '-updatedAt',
-    limit: 10,
+    sort: '-createdAt',
+    limit: 4,
     depth: 1,
   })
 
@@ -64,11 +64,18 @@ export default async function EditorialSubmissionPage({ params, searchParams }: 
 
       <Breadcrumbs items={[{ label: 'Papers', href: '/articles' }, { label: submission.title }]} />
 
-      <EditorialToolbar submission={submission} mode={mode} />
+      <div id="editorial-top">
+        <EditorialToolbar submission={submission} mode={mode} />
+      </div>
 
       {mode === 'edit' ? (
         <section className="page-hero page-editor">
-          <VersionHistory submissionId={submission.id} versions={versions.docs} />
+          <VersionHistory
+            submissionId={submission.id}
+            versions={versions.docs}
+            totalVersions={versions.totalDocs}
+            displayLimit={3}
+          />
 
           <SubmissionForm
             mode="edit"
@@ -76,6 +83,7 @@ export default async function EditorialSubmissionPage({ params, searchParams }: 
             submission={submission}
             action={updateSubmission}
             submitLabel="Save Changes"
+            allowMediaLibrary
           />
         </section>
       ) : (

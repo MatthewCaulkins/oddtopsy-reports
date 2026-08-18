@@ -42,10 +42,16 @@ export function PaperPreview({ paper, editorial = false }: PaperPreviewProps) {
   const keywords = getKeywords(paper)
   const authors = getAuthors(paper)
 
+  const manuscriptBody = typeof paper.manuscriptBody === 'string' ? paper.manuscriptBody : ''
+
+  const hasEditorManuscript = paper.submissionType === 'editor' && manuscriptBody.trim().length > 0
+
   return (
-    <article className={`paper-preview`}>
-      {' '}
-      {/* ${editorial ? 'paper-preview-editorial' : ''} */}
+    <article
+      className={['paper-preview', editorial && 'paper-preview-editorial']
+        .filter(Boolean)
+        .join(' ')}
+    >
       <section className="paper-preview-hero">
         <div className="paper-preview-heading">
           <h1>{paper.title}</h1>
@@ -68,10 +74,13 @@ export function PaperPreview({ paper, editorial = false }: PaperPreviewProps) {
         {heroImageUrl && (
           <div
             className="paper-preview-image"
-            style={{ backgroundImage: `url(${heroImageUrl})` }}
+            style={{
+              backgroundImage: `url(${heroImageUrl})`,
+            }}
           />
         )}
       </section>
+
       {paper.abstract && (
         <section className="paper-preview-section">
           <div className="section-heading-rule">
@@ -81,6 +90,7 @@ export function PaperPreview({ paper, editorial = false }: PaperPreviewProps) {
           <p>{paper.abstract}</p>
         </section>
       )}
+
       {keywords.length > 0 && (
         <section className="paper-preview-section">
           <div className="paper-keywords">
@@ -90,7 +100,8 @@ export function PaperPreview({ paper, editorial = false }: PaperPreviewProps) {
           </div>
         </section>
       )}
-      {pdfUrl && (
+
+      {paper.submissionType === 'upload' && pdfUrl && (
         <section className="paper-preview-section">
           <div className="section-heading-rule">
             <h2>Paper</h2>
@@ -99,6 +110,22 @@ export function PaperPreview({ paper, editorial = false }: PaperPreviewProps) {
           <iframe className="pdf-frame" src={pdfUrl} title={paper.title} />
         </section>
       )}
+
+      {hasEditorManuscript && (
+        <section className="paper-preview-section">
+          <div className="section-heading-rule">
+            <h2>Paper</h2>
+          </div>
+
+          <div
+            className="rich-output manuscript-content"
+            dangerouslySetInnerHTML={{
+              __html: manuscriptBody,
+            }}
+          />
+        </section>
+      )}
+
       {paper.supportingImages && paper.supportingImages.length > 0 && (
         <section className="paper-preview-section">
           <div className="section-heading-rule">
@@ -114,6 +141,7 @@ export function PaperPreview({ paper, editorial = false }: PaperPreviewProps) {
               return (
                 <figure key={index}>
                   <img src={imageUrl} alt={item.caption || ''} />
+
                   {item.caption && <figcaption>{item.caption}</figcaption>}
                 </figure>
               )

@@ -37,10 +37,10 @@ export function PaperCard({ paper, editorial = false, compact = false }: PaperCa
 
   return (
     <a
-        className={`paper-card paper-card-featured ${editorial ? 'editor-card' : ''} ${
-            compact ? 'paper-card-compact' : ''
-        }`}
-        href={href}
+      className={`paper-card paper-card-featured ${editorial ? 'editor-card' : ''} ${
+        compact ? 'paper-card-compact' : ''
+      }`}
+      href={href}
     >
       <div className="paper-card-content">
         <h3>{paper.title}</h3>

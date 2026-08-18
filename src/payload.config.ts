@@ -1,5 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
+
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -10,6 +10,9 @@ import { FocusAreas } from './collections/FocusAreas'
 import { Media } from './collections/Media'
 import { Submissions } from './collections/Submissions'
 import { Users } from './collections/Users'
+import { About } from './globals/About'
+
+import { richTextEditor } from '@/editor/richTextEditor'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -17,7 +20,7 @@ const dirname = path.dirname(filename)
 export default buildConfig({
   admin: {
     components: {
-      actions: ['@/components/AdminUserMenu'],
+      actions: ['@/components/admin/AdminUserMenu'],
     },
     user: Users.slug,
     importMap: {
@@ -25,7 +28,8 @@ export default buildConfig({
     },
   },
   collections: [EditorNotes, FocusAreas, Media, Submissions, Users],
-  editor: lexicalEditor(),
+  editor: richTextEditor,
+  globals: [About],
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

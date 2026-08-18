@@ -231,21 +231,52 @@ type SubmissionUpdateData = {
   title: string
   subtitle: string
   abstract: string
+  focusArea: number[]
   keywords: { keyword: string }[]
+  findingDate: string | null
+  location: string
+
   leadAuthor: {
     name: string
     affiliation: string
   }
+
   correspondingAuthor: {
     name: string
     email: string
     affiliation: string
   }
+
+  coAuthors: {
+    id?: string
+    name: string
+    affiliation: string
+  }[]
+
+  submissionType: 'upload' | 'editor'
   mediaNotes: string
   authorMessage: string
+
   featuredImage?: number
-  manuscriptPDF?: number
-  supportingImages?: { image: number; caption?: string | null }[]
+  manuscriptBody?: string | null
+  manuscriptPDF?: number | null
+
+  supportingImages?: {
+    image: number
+    caption?: string | null
+  }[]
+}
+
+function parseLexicalValue(value: FormDataEntryValue | null): Submission['manuscriptBody'] | null {
+  if (typeof value !== 'string' || !value.trim()) {
+    return null
+  }
+
+  try {
+    return JSON.parse(value) as Submission['manuscriptBody']
+  } catch {
+    throw new Error('Invalid manuscript editor content.')
+  }
 }
 
 async function uploadMedia(payload: any, file: File, alt: string) {
@@ -266,9 +297,39 @@ async function uploadMedia(payload: any, file: File, alt: string) {
   return Number(media.id)
 }
 
+function parseJSON<T>(value: FormDataEntryValue | null, fallback: T): T {
+  if (typeof value !== 'string' || !value.trim()) {
+    return fallback
+  }
+
+  try {
+    return JSON.parse(value) as T
+  } catch {
+    return fallback
+  }
+}
+
+function parseNumericIDs(values: FormDataEntryValue[]): number[] {
+  return values
+    .map((value) => Number(value))
+    .filter((value) => Number.isInteger(value) && value > 0)
+}
+
+function parseOptionalDate(value: FormDataEntryValue | null): string | null {
+  const date = String(value || '').trim()
+
+  if (!date) return null
+
+  return new Date(`${date}T00:00:00`).toISOString()
+}
+
 export async function updateSubmission(formData: FormData) {
   const payload = await getPayload({ config })
   const id = String(formData.get('id') || '')
+
+  if (!id) {
+    throw new Error('Submission ID is required.')
+  }
 
   const title = String(formData.get('title') || '').trim()
   const keywordsRaw = String(formData.get('keywords') || '').trim()
@@ -281,21 +342,57 @@ export async function updateSubmission(formData: FormData) {
         .map((keyword) => ({ keyword }))
     : []
 
+  const coAuthors = parseJSON<
+    {
+      id?: string | null
+      name: string
+      affiliation: string
+    }[]
+  >(formData.get('coAuthors'), [])
+    .map((author) => ({
+      ...(author.id ? { id: author.id } : {}),
+      name: String(author.name || '').trim(),
+      affiliation: String(author.affiliation || '').trim(),
+    }))
+    .filter((author) => author.name)
+
+  const findingDate = String(formData.get('findingDate') || '').trim()
+
+  const submissionType = formData.get('submissionType') === 'editor' ? 'editor' : 'upload'
+
   const data: SubmissionUpdateData = {
     title,
     subtitle: String(formData.get('subtitle') || '').trim(),
+
     abstract: String(formData.get('abstract') || '').trim(),
+
+    focusArea: parseNumericIDs(formData.getAll('focusArea')),
+
     keywords,
+
+    findingDate: findingDate ? new Date(`${findingDate}T00:00:00`).toISOString() : null,
+
+    location: String(formData.get('location') || '').trim(),
+
     leadAuthor: {
       name: String(formData.get('leadAuthorName') || '').trim(),
+
       affiliation: String(formData.get('leadAuthorAffiliation') || '').trim(),
     },
+
     correspondingAuthor: {
       name: String(formData.get('correspondingAuthorName') || '').trim(),
+
       email: String(formData.get('correspondingAuthorEmail') || '').trim(),
+
       affiliation: String(formData.get('correspondingAuthorAffiliation') || '').trim(),
     },
+
+    coAuthors,
+    submissionType,
+
     mediaNotes: String(formData.get('mediaNotes') || '').trim(),
+
     authorMessage: String(formData.get('authorMessage') || '').trim(),
   }
 
@@ -310,6 +407,23 @@ export async function updateSubmission(formData: FormData) {
   if (manuscriptPDF && manuscriptPDF.size > 0) {
     data.manuscriptPDF = await uploadMedia(payload, manuscriptPDF, `${title} manuscript PDF`)
   }
+
+  if (submissionType === 'editor') {
+    data.manuscriptBody = String(formData.get('manuscriptBody') || '').trim()
+
+    data.manuscriptPDF = null
+  }
+
+  if (submissionType === 'upload') {
+    data.manuscriptBody = null
+  }
+
+  const retainedSupportingImageIDs = parseJSON<Array<number | string>>(
+    formData.get('retainedSupportingImageIDs'),
+    [],
+  )
+    .map(Number)
+    .filter((id) => Number.isInteger(id) && id > 0)
 
   const supportingImages = formData.getAll('supportingImages') as File[]
 
@@ -329,14 +443,15 @@ export async function updateSubmission(formData: FormData) {
       depth: 0,
     })
 
-    const existingSupportingImages =
+    const retainedSupportingImages =
       existingSubmission.supportingImages
         ?.map((item) => {
-          if (!item?.image) return null
+          const imageID =
+            typeof item.image === 'object' ? Number(item.image?.id) : Number(item.image)
 
-          const imageID = typeof item.image === 'object' ? item.image.id : item.image
-
-          if (!imageID) return null
+          if (!imageID || !retainedSupportingImageIDs.includes(imageID)) {
+            return null
+          }
 
           return {
             image: imageID,
@@ -352,7 +467,7 @@ export async function updateSubmission(formData: FormData) {
           } => item !== null,
         ) || []
 
-    data.supportingImages = [...existingSupportingImages, ...newSupportingImages]
+    data.supportingImages = [...retainedSupportingImages, ...newSupportingImages]
   }
 
   await payload.update({
@@ -362,8 +477,9 @@ export async function updateSubmission(formData: FormData) {
   })
 
   revalidatePath(`/editorial/submissions/${id}`)
+  revalidatePath(`/editorial/submissions/${id}/history`)
   revalidatePath('/')
   revalidatePath('/articles')
 
-  redirect(`/editorial/submissions/${id}?mode=preview`)
+  redirect(`/editorial/submissions/${id}?mode=edit#editorial-top`)
 }

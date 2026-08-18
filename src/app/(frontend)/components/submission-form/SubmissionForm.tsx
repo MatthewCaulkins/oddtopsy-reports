@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import type { FocusArea, Media, Submission } from '@/payload-types'
 import { FileUpload, type ExistingFile } from '../FileUpload'
-import { ManuscriptEditor } from './ManuscriptEditor'
+import { PayloadManuscriptEditor } from './PayloadManuscriptEditor'
 
 type CoAuthor = {
+  id?: string | null
   name: string
   affiliation: string
 }
@@ -21,6 +22,7 @@ type SubmissionFormProps = {
   submission?: Submission
   action: (formData: FormData) => void | Promise<void>
   submitLabel?: string
+  allowMediaLibrary?: boolean
 }
 
 function getSelectedFocusIDs(submission?: Submission) {
@@ -32,7 +34,12 @@ function getSelectedFocusIDs(submission?: Submission) {
 }
 
 function keywordsToString(submission?: Submission) {
-  return submission?.keywords?.map((item) => item.keyword).filter(Boolean).join(', ') || ''
+  return (
+    submission?.keywords
+      ?.map((item) => item.keyword)
+      .filter(Boolean)
+      .join(', ') || ''
+  )
 }
 
 function mediaToExistingFile(media: number | Media | null | undefined) {
@@ -74,10 +81,25 @@ export function SubmissionForm({
   submission,
   action,
   submitLabel = mode === 'edit' ? 'Save Changes' : 'Submit Paper',
+  allowMediaLibrary = false,
 }: SubmissionFormProps) {
   const isEdit = mode === 'edit'
-  const hasExistingFeaturedImage = Boolean(submission?.featuredImage)
-  const hasExistingPDF = Boolean(submission?.manuscriptPDF)
+
+  const [existingFeaturedFiles, setExistingFeaturedFiles] = useState<ExistingFile[]>(() =>
+    mediaToExistingFile(submission?.featuredImage),
+  )
+
+  const [existingPDFFiles, setExistingPDFFiles] = useState<ExistingFile[]>(() =>
+    mediaToExistingFile(submission?.manuscriptPDF),
+  )
+
+  const [existingSupportingFiles, setExistingSupportingFiles] = useState<ExistingFile[]>(() =>
+    supportingImagesToExistingFiles(submission),
+  )
+
+  const hasExistingFeaturedImage = existingFeaturedFiles.length > 0
+
+  const hasExistingPDF = existingPDFFiles.length > 0
 
   const selectedFocusIDs = getSelectedFocusIDs(submission)
 
@@ -87,6 +109,7 @@ export function SubmissionForm({
 
   const [coAuthors, setCoAuthors] = useState<CoAuthor[]>(
     submission?.coAuthors?.map((author) => ({
+      id: author.id,
       name: author.name || '',
       affiliation: author.affiliation || '',
     })) || [],
@@ -146,14 +169,59 @@ export function SubmissionForm({
       }
     })
 
-    if (submissionType === 'upload' && (!isEdit || !hasExistingPDF)) {
+    if (!hasExistingFeaturedImage) {
+      requiredFields.splice(1, 0, {
+        name: 'featuredImage',
+        label: 'Featured image',
+      })
+    }
+
+    if (submissionType === 'upload' && !hasExistingPDF) {
       const fileInput = form.elements.namedItem('manuscriptPDF')
 
       if (
         fileInput instanceof HTMLInputElement &&
         (!fileInput.files || fileInput.files.length === 0)
       ) {
-        nextErrors.push({ name: 'manuscriptPDF', label: 'Manuscript PDF' })
+        nextErrors.push({
+          name: 'manuscriptPDF',
+          label: 'Manuscript PDF',
+        })
+      }
+    }
+
+    function lexicalHasContent(rawValue: string) {
+      if (!rawValue.trim()) return false
+
+      try {
+        const value = JSON.parse(rawValue)
+
+        function nodeHasContent(node: unknown): boolean {
+          if (!node || typeof node !== 'object') return false
+
+          if ('text' in node && typeof node.text === 'string' && node.text.trim()) {
+            return true
+          }
+
+          // A block such as RichImage counts as manuscript content.
+          if ('type' in node && (node.type === 'block' || node.type === 'inlineBlock')) {
+            return true
+          }
+
+          if ('children' in node && Array.isArray(node.children)) {
+            return node.children.some(nodeHasContent)
+          }
+
+          if ('root' in node && node.root && typeof node.root === 'object') {
+            return nodeHasContent(node.root)
+          }
+
+          return false
+        }
+
+        return nodeHasContent(value)
+      } catch {
+        return false
       }
     }
 
@@ -162,11 +230,17 @@ export function SubmissionForm({
 
       const bodyValue =
         manuscriptBody instanceof HTMLInputElement
-          ? manuscriptBody.value.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim()
+          ? manuscriptBody.value
+              .replace(/<[^>]*>/g, '')
+              .replace(/&nbsp;/g, '')
+              .trim()
           : ''
 
       if (!bodyValue) {
-        nextErrors.push({ name: 'manuscriptBody', label: 'Manuscript body' })
+        nextErrors.push({
+          name: 'manuscriptBody',
+          label: 'Manuscript body',
+        })
       }
     }
 
@@ -221,7 +295,9 @@ export function SubmissionForm({
           </label>
           <div>
             <input id="title" name="title" defaultValue={submission?.title || ''} required />
-            {hasError('title') && <p className="field-error">Please complete this required field.</p>}
+            {hasError('title') && (
+              <p className="field-error">Please complete this required field.</p>
+            )}
           </div>
         </div>
 
@@ -234,9 +310,12 @@ export function SubmissionForm({
           name="featuredImage"
           label="Featured Image"
           accept="image/*"
-          required={!isEdit || !hasExistingFeaturedImage}
-            invalid={hasError('featuredImage')}
-            existingFiles={mediaToExistingFile(submission?.featuredImage)}
+          required={!hasExistingFeaturedImage}
+          invalid={hasError('featuredImage')}
+          existingFiles={existingFeaturedFiles}
+          onRemoveExisting={(id) => {
+            setExistingFeaturedFiles((current) => current.filter((file) => file.id !== id))
+          }}
         />
 
         <div className={`form-row ${hasError('abstract') ? 'is-invalid' : ''}`}>
@@ -251,7 +330,9 @@ export function SubmissionForm({
               defaultValue={submission?.abstract || ''}
               required
             />
-            {hasError('abstract') && <p className="field-error">Please complete this required field.</p>}
+            {hasError('abstract') && (
+              <p className="field-error">Please complete this required field.</p>
+            )}
           </div>
         </div>
 
@@ -260,14 +341,22 @@ export function SubmissionForm({
             Focus areas <span className="required">*</span>
           </label>
           <div>
-            <select id="focusArea" name="focusArea" multiple required defaultValue={selectedFocusIDs}>
+            <select
+              id="focusArea"
+              name="focusArea"
+              multiple
+              required
+              defaultValue={selectedFocusIDs}
+            >
               {focusAreas.map((focusArea) => (
                 <option key={focusArea.id} value={focusArea.id}>
                   {focusArea.name}
                 </option>
               ))}
             </select>
-            {hasError('focusArea') && <p className="field-error">Please complete this required field.</p>}
+            {hasError('focusArea') && (
+              <p className="field-error">Please complete this required field.</p>
+            )}
           </div>
         </div>
 
@@ -391,14 +480,24 @@ export function SubmissionForm({
             <button
               type="button"
               className="button secondary"
-              onClick={() => setCoAuthors([...coAuthors, { name: '', affiliation: '' }])}
+              onClick={() =>
+                setCoAuthors([
+                  ...coAuthors,
+                  {
+                    name: '',
+                    affiliation: '',
+                  },
+                ])
+              }
             >
               Add co-author
             </button>
           </div>
 
           {coAuthors.length === 0 && (
-            <p className="form-help">Add any additional authors who should appear on the published paper.</p>
+            <p className="form-help">
+              Add any additional authors who should appear on the published paper.
+            </p>
           )}
 
           {coAuthors.map((author, index) => (
@@ -416,7 +515,10 @@ export function SubmissionForm({
 
               <div className="form-row">
                 <label>Name</label>
-                <input value={author.name} onChange={(event) => updateCoAuthor(index, 'name', event.target.value)} />
+                <input
+                  value={author.name}
+                  onChange={(event) => updateCoAuthor(index, 'name', event.target.value)}
+                />
               </div>
 
               <div className="form-row">
@@ -459,9 +561,12 @@ export function SubmissionForm({
             name="manuscriptPDF"
             label="Manuscript PDF"
             accept="application/pdf"
-            required={!isEdit || !hasExistingPDF}
+            required={!hasExistingPDF}
             invalid={hasError('manuscriptPDF')}
-            existingFiles={mediaToExistingFile(submission?.manuscriptPDF)}
+            existingFiles={existingPDFFiles}
+            onRemoveExisting={(id) => {
+              setExistingPDFFiles((current) => current.filter((file) => file.id !== id))
+            }}
           />
         )}
 
@@ -471,7 +576,10 @@ export function SubmissionForm({
               Manuscript body <span className="required">*</span>
             </label>
             <div>
-              <ManuscriptEditor />
+              <PayloadManuscriptEditor
+                initialHTML={submission?.manuscriptBody || ''}
+                allowMediaLibrary={allowMediaLibrary}
+              />
               {hasError('manuscriptBody') && (
                 <p className="field-error">Please complete this required field.</p>
               )}
@@ -480,11 +588,20 @@ export function SubmissionForm({
         )}
 
         <FileUpload
-            name="supportingImages"
-            label="Supporting Images"
-            accept="image/*"
-            multiple
-            existingFiles={supportingImagesToExistingFiles(submission)}
+          name="supportingImages"
+          label="Supporting Images"
+          accept="image/*"
+          multiple
+          existingFiles={existingSupportingFiles}
+          onRemoveExisting={(id) => {
+            setExistingSupportingFiles((current) => current.filter((file) => file.id !== id))
+          }}
+        />
+
+        <input
+          type="hidden"
+          name="retainedSupportingImageIDs"
+          value={JSON.stringify(existingSupportingFiles.map((file) => file.id))}
         />
       </section>
 
@@ -495,12 +612,22 @@ export function SubmissionForm({
 
         <div className="form-row">
           <label htmlFor="mediaNotes">Image / figure notes</label>
-          <textarea id="mediaNotes" name="mediaNotes" rows={4} defaultValue={submission?.mediaNotes || ''} />
+          <textarea
+            id="mediaNotes"
+            name="mediaNotes"
+            rows={4}
+            defaultValue={submission?.mediaNotes || ''}
+          />
         </div>
 
         <div className="form-row">
           <label htmlFor="authorMessage">Message to editors</label>
-          <textarea id="authorMessage" name="authorMessage" rows={4} defaultValue={submission?.authorMessage || ''} />
+          <textarea
+            id="authorMessage"
+            name="authorMessage"
+            rows={4}
+            defaultValue={submission?.authorMessage || ''}
+          />
         </div>
       </section>
 

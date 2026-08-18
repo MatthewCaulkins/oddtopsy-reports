@@ -1,3 +1,5 @@
+@import '@/styles/editor.css';
+
 .app-header__account {
   display: none !important;
 }
@@ -48,5 +50,89 @@
         background: rgba(255, 255, 255, 0.08);
       }
     }
+  }
+}
+
+/* ==========================================================================
+   Jodit Admin Overrides
+   ========================================================================== */
+
+.jodit-container,
+.jodit-container * {
+  color: #172026;
+}
+
+.jodit-drag-and-drop__file-box,
+.jodit_uploadfile_button {
+  color: #172026 !important;
+}
+
+.jodit-drag-and-drop__file-box a,
+.jodit_uploadfile_button a,
+.jodit-ui-button {
+  color: #172026;
+}
+
+.jodit-container .jodit-workplace {
+  background: #fff;
+}
+
+.jodit-container .jodit-wysiwyg {
+  background: #fff;
+  color: #172026;
+}
+
+/* ==========================================================================
+   Oddtopsy editor modal overrides
+   ========================================================================== */
+
+.media-picker {
+  background: #fff;
+  color: #172026;
+
+  input,
+  textarea,
+  select {
+    background: #fff;
+    color: #172026;
+    border: 1px solid #d9dee2;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #7d8790;
+  }
+
+  .button {
+    background: #fff;
+    color: #172026;
+    border: 1px solid #d9dee2;
+  }
+
+  .button.primary {
+    background: #286073;
+    color: #fff;
+    border-color: #286073;
+  }
+
+  .button.secondary {
+    background: #fff;
+    color: #172026;
+  }
+
+  .media-picker-close {
+    background: #eef1f3;
+    color: #172026;
+  }
+
+  .media-picker-item {
+    background: #fff;
+    color: #172026;
+    border-color: #d9dee2;
+  }
+
+  .media-picker-item:hover {
+    border-color: #286073;
+    background: #f5f8f9;
   }
 }

@@ -26,6 +26,7 @@ type FileUploadProps = {
   invalid?: boolean
   errorMessage?: string
   existingFiles?: ExistingFile[]
+  onRemoveExisting?: (id: number | string) => void
 }
 
 export function FileUpload({
@@ -37,6 +38,7 @@ export function FileUpload({
   invalid = false,
   errorMessage = 'Please complete this required field.',
   existingFiles = [],
+  onRemoveExisting,
 }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [files, setFiles] = useState<UploadFile[]>([])
@@ -85,26 +87,39 @@ export function FileUpload({
         />
 
         {existingFiles.length > 0 && (
-        <div className="file-preview-list existing-file-list">
+          <div className="file-preview-list existing-file-list">
             {existingFiles.map((item) => {
-            const isImage = item.mimeType?.startsWith('image/') || item.url?.match(/\.(jpg|jpeg|png|webp|gif)$/i)
+              const isImage =
+                item.mimeType?.startsWith('image/') ||
+                item.url?.match(/\.(jpg|jpeg|png|webp|gif)$/i)
 
-            return (
+              return (
                 <div className="file-preview existing-file-preview" key={item.id}>
-                {isImage && item.url ? (
+                  {isImage && item.url ? (
                     <img src={item.url} alt={item.alt || ''} />
-                ) : (
+                  ) : (
                     <div className="file-preview-icon">PDF</div>
-                )}
+                  )}
 
-                <div className="file-preview-content">
+                  <div className="file-preview-content">
                     <strong>{item.filename || item.alt || 'Existing file'}</strong>
                     <small>Current upload</small>
+                  </div>
+
+                  {onRemoveExisting && (
+                    <button
+                      type="button"
+                      className="file-remove"
+                      aria-label={`Remove ${item.filename || 'existing file'}`}
+                      onClick={() => onRemoveExisting(item.id)}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
-                </div>
-            )
+              )
             })}
-        </div>
+          </div>
         )}
         {files.length > 0 && (
           <div className="file-preview-list">
