@@ -42,6 +42,11 @@ export const SiteContent: CollectionConfig = {
     {
       name: 'heroBody',
       type: 'textarea',
+      admin: {
+        components: {
+          Field: '@/components/admin/JoditField',
+        },
+      },
     },
 
     {
@@ -80,11 +85,11 @@ export const SiteContent: CollectionConfig = {
           name: 'person',
           type: 'relationship',
           relationTo: 'users',
-          required: true,
         },
         {
           name: 'displayName',
           type: 'text',
+          required: true,
         },
         {
           name: 'title',
@@ -93,6 +98,11 @@ export const SiteContent: CollectionConfig = {
         {
           name: 'affiliation',
           type: 'text',
+        },
+        {
+          name: 'photo',
+          type: 'upload',
+          relationTo: 'media',
         },
         {
           name: 'biography',

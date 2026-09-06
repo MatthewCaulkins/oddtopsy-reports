@@ -3,41 +3,6 @@
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import type { Submission } from '@/payload-types'
-
-function htmlToLexicalText(html: string): Submission['manuscriptBody'] {
-  return {
-    root: {
-      type: 'root',
-      format: '',
-      indent: 0,
-      version: 1,
-      direction: null,
-      children: [
-        {
-          type: 'paragraph',
-          format: '',
-          indent: 0,
-          version: 1,
-          direction: null,
-          textStyle: '',
-          textFormat: 0,
-          children: [
-            {
-              type: 'text',
-              text: html,
-              format: 0,
-              style: '',
-              mode: 'normal',
-              detail: 0,
-              version: 1,
-            },
-          ],
-        },
-      ],
-    },
-  }
-}
 
 export async function submitPaper(formData: FormData) {
   const payload = await getPayload({ config })
@@ -68,7 +33,7 @@ export async function submitPaper(formData: FormData) {
 
   const authorMessage = String(formData.get('authorMessage') || '').trim()
   const submissionType = String(formData.get('submissionType') || 'upload') as 'upload' | 'editor'
-  const manuscripBody = String(formData.get('manuscripBody') || '').trim()
+  const manuscriptBody = String(formData.get('manuscriptBody') || '').trim()
   const pdf = formData.get('manuscriptPDF') as File | null
 
   const supportingImages = formData.getAll('supportingImages') as File[]
@@ -102,7 +67,7 @@ export async function submitPaper(formData: FormData) {
     mediaID = await uploadMedia(pdf, title)
   }
 
-  if (submissionType === 'editor' && !manuscripBody) {
+  if (submissionType === 'editor' && !manuscriptBody) {
     throw new Error('Please enter the manuscript text.')
   }
 
@@ -162,19 +127,26 @@ export async function submitPaper(formData: FormData) {
       keywords,
       findingDate: findingDate || undefined,
       location,
+
       leadAuthor: {
         name: leadAuthorName,
         affiliation: leadAuthorAffiliation,
       },
+
       correspondingAuthor: {
         name: correspondingAuthorName,
         email: correspondingAuthorEmail,
         affiliation: correspondingAuthorAffiliation,
       },
+
       coAuthors,
+
       submissionType,
-      manuscriptPDF: mediaID,
-      manuscriptBody: submissionType === 'editor' ? htmlToLexicalText(manuscripBody) : undefined,
+
+      manuscriptPDF: submissionType === 'upload' ? mediaID : undefined,
+
+      manuscriptBody: submissionType === 'editor' ? manuscriptBody : undefined,
+
       supportingImages: supportingImageData,
       mediaNotes,
       authorMessage,

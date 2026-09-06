@@ -71,6 +71,7 @@ export interface Config {
     'focus-areas': FocusArea;
     media: Media;
     submissions: Submission;
+    'site-content': SiteContent;
     users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -83,6 +84,7 @@ export interface Config {
     'focus-areas': FocusAreasSelect<false> | FocusAreasSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
+    'site-content': SiteContentSelect<false> | SiteContentSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -325,6 +327,33 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-content".
+ */
+export interface SiteContent {
+  id: number;
+  page: 'papers' | 'submit' | 'about' | 'subscribe';
+  heroTitle: string;
+  heroBody?: string | null;
+  content?: string | null;
+  secondaryTitle?: string | null;
+  secondaryContent?: string | null;
+  editorialBoard?:
+    | {
+        person?: (number | null) | User;
+        displayName: string;
+        title?: string | null;
+        affiliation?: string | null;
+        photo?: (number | null) | Media;
+        biography?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -362,6 +391,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'submissions';
         value: number | Submission;
+      } | null)
+    | ({
+        relationTo: 'site-content';
+        value: number | SiteContent;
       } | null)
     | ({
         relationTo: 'users';
@@ -541,6 +574,32 @@ export interface SubmissionsSelect<T extends boolean = true> {
       };
   authorMessage?: T;
   workflowStatus?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-content_select".
+ */
+export interface SiteContentSelect<T extends boolean = true> {
+  page?: T;
+  heroTitle?: T;
+  heroBody?: T;
+  content?: T;
+  secondaryTitle?: T;
+  secondaryContent?: T;
+  editorialBoard?:
+    | T
+    | {
+        person?: T;
+        displayName?: T;
+        title?: T;
+        affiliation?: T;
+        photo?: T;
+        biography?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

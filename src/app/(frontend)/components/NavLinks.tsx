@@ -9,23 +9,44 @@ const navItems = [
   { href: '/subscribe', label: 'Subscribe' },
 ]
 
+function getEditorialParent(pathname: string) {
+  if (pathname.startsWith('/editorial/submissions/')) {
+    return '/articles'
+  }
+
+  if (pathname.startsWith('/editorial/pages/papers')) {
+    return '/articles'
+  }
+
+  if (pathname.startsWith('/editorial/pages/submit')) {
+    return '/submit'
+  }
+
+  if (pathname.startsWith('/editorial/pages/about')) {
+    return '/about'
+  }
+
+  if (pathname.startsWith('/editorial/pages/subscribe')) {
+    return '/subscribe'
+  }
+
+  return null
+}
+
 export function NavLinks() {
   const pathname = usePathname()
+  const editorialParent = getEditorialParent(pathname)
 
   return (
     <>
       {navItems.map((item) => {
-        const isPapersItem = item.href === '/articles'
+        const isDirectActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
 
-        const isPapersChild =
-          isPapersItem && (pathname.startsWith('/articles/') || pathname.startsWith('/editorial'))
+        const isEditorialChild = editorialParent === item.href
 
-        const isActive =
-          pathname === item.href || pathname.startsWith(`${item.href}/`) || isPapersChild
+        const isActive = isDirectActive || isEditorialChild
 
-        const hasParent = isPapersChild
-
-        const className = [isActive && 'is-active', hasParent && 'has-parent']
+        const className = [isActive && 'is-active', isEditorialChild && 'has-parent']
           .filter(Boolean)
           .join(' ')
 

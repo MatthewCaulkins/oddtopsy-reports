@@ -1,39 +1,62 @@
-import { Submission } from '@/payload-types'
-import { approveSubmission } from '../editorial/submissions/[id]/actions'
+'use client'
+
+import { useFormStatus } from 'react-dom'
 
 type EditorialToolbarProps = {
-  submission: Submission
   mode: 'preview' | 'edit'
+  previewHref: string
+  editHref: string
+  publishedHref: string
+  publishAction?: (formData: FormData) => void | Promise<void>
+  publishId?: string | number
 }
 
-export function EditorialToolbar({ submission, mode }: EditorialToolbarProps) {
-  const id = submission.id
+function PublishButton() {
+  const { pending } = useFormStatus()
+
+  return (
+    <button className="button primary" type="submit" disabled={pending}>
+      {pending ? 'Publishing…' : 'Approve & Publish'}
+    </button>
+  )
+}
+
+export function EditorialToolbar({
+  mode,
+  previewHref,
+  editHref,
+  publishedHref,
+  publishAction,
+  publishId,
+}: EditorialToolbarProps) {
+  const canPublish = Boolean(publishAction) && publishId !== undefined && publishId !== null
 
   return (
     <section className="editorial-toolbar">
       <div className="editorial-toolbar-tabs">
         <a
           className={`button secondary ${mode === 'preview' ? 'is-active' : ''}`}
-          href={`/editorial/submissions/${id}?mode=preview`}
+          href={previewHref}
         >
           Preview
         </a>
 
-        <a
-          className={`button secondary ${mode === 'edit' ? 'is-active' : ''}`}
-          href={`/editorial/submissions/${id}?mode=edit`}
-        >
+        <a className={`button secondary ${mode === 'edit' ? 'is-active' : ''}`} href={editHref}>
           Edit
         </a>
       </div>
 
-      <form action={approveSubmission}>
-        <input type="hidden" name="id" value={id} />
+      {canPublish ? (
+        <form action={publishAction}>
+          <input type="hidden" name="id" value={publishId} />
 
-        <button className="button primary" type="submit">
-          Approve & Publish
-        </button>
-      </form>
+          <PublishButton />
+        </form>
+      ) : (
+        <a href={publishedHref} className="button secondary">
+          View Published
+        </a>
+      )}
     </section>
   )
 }

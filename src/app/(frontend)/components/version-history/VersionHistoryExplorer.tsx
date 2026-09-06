@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useFormStatus } from 'react-dom'
 import { restoreSubmissionVersion } from '@/app/(frontend)/editorial/submissions/[id]/actions'
 
 import {
@@ -14,6 +15,16 @@ import type { Media } from '@/payload-types'
 import type { VersionField } from './versionUtils'
 
 type DiffSide = 'before' | 'after'
+
+function RestoreVersionButton({ versionNumber }: { versionNumber: number }) {
+  const { pending } = useFormStatus()
+
+  return (
+    <button className="button primary" type="submit" disabled={pending}>
+      {pending ? 'Restoring…' : `Restore Version ${versionNumber}`}
+    </button>
+  )
+}
 
 function HighlightedText({
   value,
@@ -596,9 +607,7 @@ export function VersionHistoryExplorer({ submissionId, versions, initialVersionI
 
               <input type="hidden" name="versionId" value={activeVersion.id} />
 
-              <button className="button primary" type="submit">
-                Restore Version {activeIndex + 1}
-              </button>
+              <RestoreVersionButton versionNumber={activeIndex + 1} />
             </form>
           )}
         </header>

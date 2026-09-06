@@ -7,6 +7,8 @@ import { Header } from '../../components/Header'
 import { Footer } from '../../components/Footer'
 import { PaperPreview } from '../../components/PaperPreview'
 
+import { headers as getHeaders } from 'next/headers'
+
 type Props = {
   params: Promise<{
     slug: string
@@ -16,6 +18,9 @@ type Props = {
 export default async function SinglePaperPage({ params }: Props) {
   const { slug } = await params
   const payload = await getPayload({ config })
+
+  const headers = await getHeaders()
+  const { user } = await payload.auth({ headers })
 
   const result = await payload.find({
     collection: 'submissions',
@@ -44,6 +49,14 @@ export default async function SinglePaperPage({ params }: Props) {
       <Header />
 
       <Breadcrumbs items={[{ label: 'Papers', href: '/articles' }, { label: paper.title }]} />
+
+      {user && (
+        <div className="paper-editor-actions">
+          <a href={`/editorial/submissions/${paper.id}`} className="button secondary">
+            Edit Paper
+          </a>
+        </div>
+      )}
 
       <PaperPreview paper={paper} />
 

@@ -1,25 +1,51 @@
-import { Footer } from '../components/Footer'
-import { Header } from '../components/Header'
+import { headers as getHeaders } from 'next/headers'
+import { getPayload } from 'payload'
 
-export default function SubscribePage() {
+import config from '@/payload.config'
+
+import { Header } from '../components/Header'
+import { Footer } from '../components/Footer'
+
+import { getSiteContent } from '@/lib/getSiteContent'
+import { EditPageButton } from '../components/site-content/EditPageButton'
+
+export default async function SubscribePage() {
+  const headers = await getHeaders()
+  const payload = await getPayload({ config })
+
+  const { user } = await payload.auth({
+    headers,
+  })
+
+  const pageContent = await getSiteContent('subscribe')
+
   return (
     <main className="site">
       <Header />
 
+      {user && <EditPageButton page="subscribe" />}
+
       <section className="page-hero">
-        <h1>Subscribe to Oddtopsy Reports</h1>
-        <p>
-          Follow new case papers, anatomical findings, and project updates as the publication grows.
-        </p>
+        <h1>{pageContent?.heroTitle || 'Subscribe to Oddtopsy Reports'}</h1>
+
+        {pageContent?.heroBody && <p>{pageContent.heroBody}</p>}
       </section>
 
       <section className="section subscribe-layout">
         <div className="content-panel">
-          <h2>Stay connected</h2>
-          <p>
-            Subscriptions are not active yet, but this page will eventually support publication
-            updates, reader memberships, and ways to help sustain the archive.
-          </p>
+          {pageContent?.content ? (
+            <div
+              className="rich-output site-content-output"
+              dangerouslySetInnerHTML={{
+                __html: pageContent.content,
+              }}
+            />
+          ) : (
+            <>
+              <h2>Stay connected</h2>
+              <p>Subscriptions are not active yet.</p>
+            </>
+          )}
 
           <form className="submit-form">
             <label>
@@ -34,15 +60,16 @@ export default function SubscribePage() {
         </div>
 
         <aside className="content-panel">
-          <h2>Possible model</h2>
-          <p>
-            We are exploring a low-cost model that keeps reading accessible while helping cover
-            hosting, editorial labor, and publication support.
-          </p>
-          <p>
-            The goal is to reduce publication barriers, not recreate the cost and friction of
-            traditional journals.
-          </p>
+          {pageContent?.secondaryTitle && <h2>{pageContent.secondaryTitle}</h2>}
+
+          {pageContent?.secondaryContent && (
+            <div
+              className="rich-output site-content-output"
+              dangerouslySetInnerHTML={{
+                __html: pageContent.secondaryContent,
+              }}
+            />
+          )}
         </aside>
       </section>
 

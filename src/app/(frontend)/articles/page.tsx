@@ -7,6 +7,9 @@ import { PaperCard } from '../components/PaperCard'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 
+import { getSiteContent } from '@/lib/getSiteContent'
+import { EditPageButton } from '../components/site-content/EditPageButton'
+
 type ArticlesPageProps = {
   searchParams: Promise<{
     q?: string
@@ -40,6 +43,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
   const headers = await getHeaders()
   const payload = await getPayload({ config })
   const { user } = await payload.auth({ headers })
+  const pageContent = await getSiteContent('papers')
 
   function buildArchiveHref({
     q,
@@ -173,9 +177,21 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
     <main className="site">
       <Header />
 
+      {user && <EditPageButton page="papers" />}
+
       <section className="page-hero">
-        <h1>Case papers and anatomical findings.</h1>
-        <p>A growing archive of submitted and editor-reviewed papers.</p>
+        <h1>{pageContent?.heroTitle || 'Case papers and anatomical findings.'}</h1>
+
+        {pageContent?.heroBody && <p>{pageContent.heroBody}</p>}
+
+        {pageContent?.content && (
+          <div
+            className="rich-output site-content-output"
+            dangerouslySetInnerHTML={{
+              __html: pageContent.content,
+            }}
+          />
+        )}
       </section>
 
       {user && editorialQueue && (

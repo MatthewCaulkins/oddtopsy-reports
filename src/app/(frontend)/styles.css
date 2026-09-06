@@ -312,11 +312,11 @@ section:only-of-type {
   text-shadow: var(--text-shadow-white);
 }
 
-.site-nav a.is-active:not(.has-parent) {
+/* .site-nav a.is-active:not(.has-parent) {
   pointer-events: none;
-}
+} */
 
-.site-nav a:not(.is-active:not(.has-parent), .nav-login):hover,
+.site-nav a:hover,
 .footer-links a:hover {
   color: var(--color-accent-highlight);
   text-shadow: var(--text-shadow-white);
@@ -374,6 +374,24 @@ section:only-of-type {
   position: relative;
 }
 
+.paper-carousel-static {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+@media (max-width: 900px) {
+  .paper-carousel-static {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .paper-carousel-static {
+    grid-template-columns: 1fr;
+  }
+}
+
 .paper-carousel-viewport {
   overflow: hidden;
   padding-inline: 3.5rem;
@@ -388,6 +406,7 @@ section:only-of-type {
 
 .paper-carousel-slide {
   opacity: 0.55;
+  transform: scale(0.95);
   transition:
     opacity 180ms ease,
     transform 180ms ease;
@@ -395,7 +414,7 @@ section:only-of-type {
 
 .paper-carousel-slide.is-active {
   opacity: 1;
-  transform: scale(1.01);
+  transform: scale(1);
 }
 
 .paper-carousel-track > * {
@@ -473,6 +492,12 @@ section:only-of-type {
   cursor: pointer;
 }
 
+.paper-carousel-arrow:hover {
+  color: var(--color-surface);
+  background-color: var(--color-accent-highlight);
+  border: none;
+}
+
 .paper-carousel-arrow.prev {
   left: 0;
 }
@@ -481,12 +506,17 @@ section:only-of-type {
   right: 0;
 }
 
+.paper-carousel-arrow::after {
+  position: relative;
+  top: 5px;
+}
+
 .paper-carousel-arrow.prev::after {
-  content: '‹';
+  content: '\2039';
 }
 
 .paper-carousel-arrow.next::after {
-  content: '›';
+  content: '\203a';
 }
 
 .paper-carousel-arrow::after {
@@ -738,8 +768,8 @@ section:only-of-type {
   color: var(--color-accent);
 } */
 
-.button.primary:hover,
-.button.secondary:hover {
+.button.primary:hover:not(:disabled),
+.button.secondary:hover:not(:disabled) {
   background: var(--color-accent-highlight);
   border-color: var(--color-accent-highlight);
   color: #fff;
@@ -770,6 +800,7 @@ button:disabled,
 .button:disabled {
   opacity: 0.65;
   cursor: wait;
+  pointer-events: none;
   transform: none;
 }
 
@@ -1050,13 +1081,19 @@ button:disabled,
 /* ==========================================================================
    Editorial Toolbar
    ========================================================================== */
-.editorial-toolbar {
+.editorial-toolbar,
+.paper-editor-actions {
   width: min(100%, var(--container));
   margin: var(--space-6) auto 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--space-4);
+}
+
+.paper-editor-actions {
+  display: flex;
+  flex-direction: row-reverse;
 }
 
 .editorial-toolbar-tabs {
@@ -1861,8 +1898,15 @@ button:disabled,
   background-color: var(--color-danger);
   border-color: var(--color-danger);
 }
-.page-editor .button:hover,
-.editorial-toolbar .button.primary:hover {
+
+.editorial-toolbar .button.primary:disabled {
+  cursor: default;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.page-editor .button:hover:not(:disabled),
+.editorial-toolbar .button.primary:hover:not(:disabled) {
   background-color: var(--color-danger-highlight);
   border-color: var(--color-danger-highlight);
 }

@@ -213,18 +213,31 @@ export async function approveSubmission(formData: FormData) {
   const payload = await getPayload({ config })
   const id = String(formData.get('id') || '')
 
+  if (!id) {
+    throw new Error('Submission ID is required.')
+  }
+
+  const submission = await payload.findByID({
+    collection: 'submissions',
+    id,
+    depth: 0,
+  })
+
   await payload.update({
     collection: 'submissions',
     id,
     data: {
       workflowStatus: 'published',
-      publishedDate: new Date().toISOString(),
+      publishedDate: submission.publishedDate || new Date().toISOString(),
     },
   })
 
   revalidatePath('/')
   revalidatePath('/articles')
-  redirect(`/articles/${id}`)
+  //   revalidatePath(`/articles/${submission.slug || id}`)
+  revalidatePath(`/editorial/submissions/${id}`)
+
+  redirect(`/articles/${submission.slug || id}`)
 }
 
 type SubmissionUpdateData = {
@@ -265,18 +278,6 @@ type SubmissionUpdateData = {
     image: number
     caption?: string | null
   }[]
-}
-
-function parseLexicalValue(value: FormDataEntryValue | null): Submission['manuscriptBody'] | null {
-  if (typeof value !== 'string' || !value.trim()) {
-    return null
-  }
-
-  try {
-    return JSON.parse(value) as Submission['manuscriptBody']
-  } catch {
-    throw new Error('Invalid manuscript editor content.')
-  }
 }
 
 async function uploadMedia(payload: any, file: File, alt: string) {
@@ -481,5 +482,5 @@ export async function updateSubmission(formData: FormData) {
   revalidatePath('/')
   revalidatePath('/articles')
 
-  redirect(`/editorial/submissions/${id}?mode=edit#editorial-top`)
+  redirect(`/editorial/submissions/${id}?mode=preview`)
 }

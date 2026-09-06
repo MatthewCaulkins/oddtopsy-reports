@@ -5,12 +5,13 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
+import { About } from './globals/About'
 import { EditorNotes } from './collections/EditorNotes'
 import { FocusAreas } from './collections/FocusAreas'
 import { Media } from './collections/Media'
 import { Submissions } from './collections/Submissions'
+import { SiteContent } from './collections/SiteContent'
 import { Users } from './collections/Users'
-import { About } from './globals/About'
 
 import { richTextEditor } from '@/editor/richTextEditor'
 
@@ -27,7 +28,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [EditorNotes, FocusAreas, Media, Submissions, Users],
+  collections: [EditorNotes, FocusAreas, Media, Submissions, SiteContent, Users],
   editor: richTextEditor,
   globals: [About],
   secret: process.env.PAYLOAD_SECRET || '',

@@ -102,7 +102,15 @@ export default async function HomePage() {
         </div>
 
         {publishedPapers.docs.length > 0 ? (
-          <PaperCarousel papers={publishedPapers.docs} />
+          publishedPapers.docs.length > 3 ? (
+            <PaperCarousel papers={publishedPapers.docs} />
+          ) : (
+            <div className="paper-carousel-static">
+              {publishedPapers.docs.map((paper) => (
+                <PaperCard key={paper.id} paper={paper} compact />
+              ))}
+            </div>
+          )
         ) : (
           <div className="empty-state">
             <h3>No published papers yet.</h3>

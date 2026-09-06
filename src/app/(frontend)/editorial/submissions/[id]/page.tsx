@@ -11,6 +11,7 @@ import { PaperPreview } from '../../../components/PaperPreview'
 import { SubmissionForm } from '../../../components/submission-form/SubmissionForm'
 import { updateSubmission } from './actions'
 import { VersionHistory } from '../../../components/VersionHistory'
+import { approveSubmission } from './actions'
 
 type Props = {
   params: Promise<{
@@ -65,7 +66,14 @@ export default async function EditorialSubmissionPage({ params, searchParams }: 
       <Breadcrumbs items={[{ label: 'Papers', href: '/articles' }, { label: submission.title }]} />
 
       <div id="editorial-top">
-        <EditorialToolbar submission={submission} mode={mode} />
+        <EditorialToolbar
+          mode={mode}
+          previewHref={`/editorial/submissions/${submission.id}?mode=preview`}
+          editHref={`/editorial/submissions/${submission.id}?mode=edit`}
+          publishedHref={`/articles/${submission.id}`}
+          publishAction={submission.workflowStatus !== 'published' ? approveSubmission : undefined}
+          publishId={submission.id}
+        />
       </div>
 
       {mode === 'edit' ? (

@@ -1,12 +1,4 @@
 import type { CollectionConfig } from 'payload'
-import { richTextEditor } from '@/editor/richTextEditor'
-
-import {
-  lexicalEditor,
-  FixedToolbarFeature,
-  HeadingFeature,
-  LinkFeature,
-} from '@payloadcms/richtext-lexical'
 
 type SubmissionSiblingData = {
   submissionType?: 'upload' | 'editor'

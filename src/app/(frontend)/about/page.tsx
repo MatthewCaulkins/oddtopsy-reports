@@ -1,66 +1,89 @@
+import { headers as getHeaders } from 'next/headers'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
+
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 
-import { RichText } from '@payloadcms/richtext-lexical/react'
+import { getSiteContent } from '@/lib/getSiteContent'
+import { EditPageButton } from '../components/site-content/EditPageButton'
 
 export default async function AboutPage() {
+  const headers = await getHeaders()
   const payload = await getPayload({ config })
 
-  const about = await payload.findGlobal({
-    slug: 'about',
+  const { user } = await payload.auth({
+    headers,
   })
 
-  const editors = await payload.find({
-    collection: 'users',
-    where: {
-      'profile.displayOnAboutPage': {
-        equals: true,
-      },
-    },
-    sort: 'profile.displayOrder',
-    depth: 1,
-  })
+  const about = await getSiteContent('about')
 
   return (
     <main className="site">
       <Header />
 
+      {user && <EditPageButton page="about" />}
+
       <section className="page-hero">
-        <h1>About Oddtopsy Reports</h1>
-        <p>
-          Oddtopsy Reports is a low-barrier publication home for unusual anatomical findings,
-          cadaveric studies, and educational case reports that deserve to be shared more widely.
-        </p>
+        <h1>{about?.heroTitle || 'About Oddtopsy Reports'}</h1>
+
+        {about?.heroBody && <p>{about.heroBody}</p>}
       </section>
 
-      <section className="section">
-        <RichText data={about.whyWeExist} />
-      </section>
+      {about?.content && (
+        <section className="section">
+          <div
+            className="rich-output site-content-output"
+            dangerouslySetInnerHTML={{
+              __html: about.content,
+            }}
+          />
+        </section>
+      )}
 
       <section className="section">
         <div className="section-heading section-heading-rule">
           <h2>Editorial Board</h2>
         </div>
 
-        {editors.docs.length > 0 ? (
+        {about?.editorialBoard && about.editorialBoard.length > 0 ? (
           <div className="editor-grid">
-            {editors.docs.map((editor) => {
-              const profile = editor.profile
+            {about.editorialBoard.map((member, index) => {
+              const person = typeof member.person === 'object' ? member.person : null
+
+              const profile = person?.profile
+
+              const displayName =
+                member.displayName ||
+                profile?.displayName ||
+                person?.email ||
+                'Editorial Board Member'
+
+              const title = member.title || profile?.title
+
+              const affiliation = member.affiliation || profile?.affiliation
+
+              const biography = member.biography || profile?.biography
+
               const photo =
                 typeof profile?.photo === 'object' && profile.photo?.url ? profile.photo.url : null
 
               return (
-                <article className="editor-profile-card" key={editor.id}>
-                  {photo && <img src={photo} alt={profile?.displayName || editor.email} />}
+                <article
+                  className="editor-profile-card"
+                  key={member.id || `${displayName}-${index}`}
+                >
+                  {photo && <img src={photo} alt={displayName} />}
 
                   <div>
-                    <h3>{profile?.displayName || editor.email}</h3>
-                    {profile?.title && <p className="editor-title">{profile.title}</p>}
-                    {profile?.affiliation && <p>{profile.affiliation}</p>}
-                    {profile?.biography && <p>{profile.biography}</p>}
+                    <h3>{displayName}</h3>
+
+                    {title && <p className="editor-title">{title}</p>}
+
+                    {affiliation && <p>{affiliation}</p>}
+
+                    {biography && <p>{biography}</p>}
                   </div>
                 </article>
               )
@@ -69,7 +92,7 @@ export default async function AboutPage() {
         ) : (
           <div className="empty-state">
             <h3>Editorial board coming soon.</h3>
-            <p>Editors marked for public display will appear here.</p>
+            <p>Editorial board members will appear here.</p>
           </div>
         )}
       </section>
