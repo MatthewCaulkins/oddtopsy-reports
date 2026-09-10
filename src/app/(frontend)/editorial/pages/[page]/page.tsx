@@ -1,5 +1,3 @@
-'use server'
-
 import { headers as getHeaders } from 'next/headers'
 import { redirect, notFound } from 'next/navigation'
 import { getPayload } from 'payload'
@@ -12,6 +10,12 @@ import { EditorialToolbar } from '@/app/(frontend)/components/EditorialToolbar'
 import { SiteContentForm } from '@/app/(frontend)/components/site-content/SiteContentForm'
 import { updateSiteContent } from './actions'
 import type { SiteContent } from '@/payload-types'
+import { SiteContentVersionHistory } from '@/app/(frontend)/components/site-content/SiteContentVersionHistory'
+
+import { AboutContent } from '@/app/(frontend)/components/site-content/AboutContent'
+import { SubmitContent } from '@/app/(frontend)/components/site-content/SubmitContent'
+import { SubscribeContent } from '@/app/(frontend)/components/site-content/SubscribeContent'
+import { PapersContent } from '@/app/(frontend)/components/site-content/PapersContent'
 
 const allowedPages = ['papers', 'submit', 'about', 'subscribe'] as const
 
@@ -91,6 +95,18 @@ export default async function EditorialPage({ params, searchParams }: Props) {
     notFound()
   }
 
+  const versions = await payload.findVersions({
+    collection: 'site-content',
+    where: {
+      parent: {
+        equals: content.id,
+      },
+    },
+    sort: '-createdAt',
+    limit: 4,
+    depth: 1,
+  })
+
   return (
     <main className="site">
       <Header />
@@ -114,61 +130,32 @@ export default async function EditorialPage({ params, searchParams }: Props) {
         publishedHref={configForPage.publicHref}
       />
 
-      <section className="page-hero page-editor">
-        {mode === 'edit' ? (
+      {mode === 'edit' ? (
+        <section className="page-hero page-editor">
+          <SiteContentVersionHistory
+            page={rawPage}
+            versions={versions.docs}
+            totalVersions={versions.totalDocs}
+            displayLimit={3}
+          />
+
           <SiteContentForm content={content} action={updateSiteContent} />
-        ) : (
-          <PageContentPreview content={content} />
-        )}
-      </section>
+        </section>
+      ) : (
+        <div className="editorial-page-preview" inert>
+          {rawPage === 'about' && <AboutContent content={content} />}
+
+          {rawPage === 'submit' && (
+            <SubmitContent content={content} allowMediaLibrary={Boolean(user)} />
+          )}
+
+          {rawPage === 'subscribe' && <SubscribeContent content={content} />}
+
+          {rawPage === 'papers' && <PapersContent content={content} editorial />}
+        </div>
+      )}
 
       <Footer />
     </main>
-  )
-}
-
-function PageContentPreview({ content }: { content: SiteContent }) {
-  return (
-    <>
-      <section className="page-hero">
-        <h1>{content.heroTitle}</h1>
-
-        {content.heroBody && (
-          <div
-            className="page-hero-body"
-            dangerouslySetInnerHTML={{
-              __html: content.heroBody,
-            }}
-          />
-        )}
-      </section>
-
-      {content.content && (
-        <section
-          className="content-panel"
-          dangerouslySetInnerHTML={{
-            __html: content.content,
-          }}
-        />
-      )}
-
-      {(content.secondaryTitle || content.secondaryContent) && (
-        <section className="content-panel">
-          {content.secondaryTitle && (
-            <div className="section-heading-rule">
-              <h2>{content.secondaryTitle}</h2>
-            </div>
-          )}
-
-          {content.secondaryContent && (
-            <div
-              dangerouslySetInnerHTML={{
-                __html: content.secondaryContent,
-              }}
-            />
-          )}
-        </section>
-      )}
-    </>
   )
 }

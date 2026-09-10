@@ -316,7 +316,7 @@ section:only-of-type {
   pointer-events: none;
 } */
 
-.site-nav a:hover,
+.site-nav a:not(.nav-login):hover,
 .footer-links a:hover {
   color: var(--color-accent-highlight);
   text-shadow: var(--text-shadow-white);
@@ -2511,4 +2511,19 @@ select:focus {
 .jodit-drag-and-drop__file-box,
 .jodit_uploadfile_button {
   color: #000;
+}
+
+.login-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 1rem;
+}
+
+.login-buttons .button.primary {
+  margin: unset;
+}
+
+.editorial-page-preview :is(button, input, select, textarea) {
+  cursor: default;
 }

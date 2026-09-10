@@ -45,9 +45,17 @@ export function LoginForm() {
 
       {error && <p className="form-error">{error}</p>}
 
-      <button className="button primary" type="submit">
-        Login
-      </button>
+      <div className="login-buttons">
+        <button className="button primary" type="submit">
+          Login
+        </button>
+        <a className="button secondary" href="/forgot-password">
+          Forgot Password
+        </a>
+        <a className="button secondary" href="/signup">
+          Signup
+        </a>
+      </div>
     </form>
   )
 }

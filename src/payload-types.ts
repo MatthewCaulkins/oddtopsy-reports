@@ -297,6 +297,7 @@ export interface Media {
  */
 export interface User {
   id: number;
+  role: 'pending' | 'editor' | 'admin';
   profile?: {
     displayName?: string | null;
     title?: string | null;
@@ -609,6 +610,7 @@ export interface SiteContentSelect<T extends boolean = true> {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  role?: T;
   profile?:
     | T
     | {

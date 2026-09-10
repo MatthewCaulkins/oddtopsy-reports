@@ -4,9 +4,44 @@ export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
     useAsTitle: 'email',
+    // Only admins should be able to use Payload Admin.
+    hidden: ({ user }) => user?.role !== 'admin',
   },
   auth: true,
+  hooks: {
+    beforeLogin: [
+      ({ user }) => {
+        if (user.role === 'pending') {
+          throw new Error('Your account is awaiting approval.')
+        }
+
+        return user
+      },
+    ],
+  },
   fields: [
+    {
+      name: 'role',
+      type: 'select',
+      required: true,
+      defaultValue: 'pending',
+      saveToJWT: true,
+
+      options: [
+        {
+          label: 'Pending',
+          value: 'pending',
+        },
+        {
+          label: 'Editor',
+          value: 'editor',
+        },
+        {
+          label: 'Admin',
+          value: 'admin',
+        },
+      ],
+    },
     // Email added by default
     // Add more fields as needed
     {
