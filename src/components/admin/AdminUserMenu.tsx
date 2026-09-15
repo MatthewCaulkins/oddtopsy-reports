@@ -25,9 +25,14 @@ export default async function AdminUserMenu() {
   return (
     <details className="admin-user-menu">
       <summary>{getInitials(user.email)}</summary>
+
       <div className="admin-user-menu__panel">
         <Link href="/">Front End</Link>
+
+        <Link href="/editorial">Editorial</Link>
+
         <Link href="/admin/account">Account</Link>
+
         <Link href="/logout">Logout</Link>
       </div>
     </details>

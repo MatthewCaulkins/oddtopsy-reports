@@ -1,5 +1,4 @@
 import { headers as getHeaders } from 'next/headers'
-import Image from 'next/image'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { NavLinks } from './NavLinks'
@@ -21,6 +20,11 @@ export async function Header() {
   const payload = await getPayload({ config })
   const { user } = await payload.auth({ headers })
 
+  const canUseEditorial =
+    user?.role === 'editor' || user?.role === 'manager' || user?.role === 'admin'
+
+  const isAdmin = user?.role === 'admin'
+
   return (
     <header className="site-header">
       <div className="site-header-inner">
@@ -32,8 +36,12 @@ export async function Header() {
           {user ? (
             <details className="user-menu">
               <summary>{getInitials(user.email)}</summary>
+
               <div className="user-menu-panel">
-                <a href="/admin">Admin Panel</a>
+                {canUseEditorial && <a href="/editorial">Editorial</a>}
+
+                {isAdmin && <a href="/admin">Admin Panel</a>}
+
                 <a href="/logout">Logout</a>
               </div>
             </details>

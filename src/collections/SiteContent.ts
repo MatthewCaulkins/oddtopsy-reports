@@ -82,12 +82,12 @@ export const SiteContent: CollectionConfig = {
       },
       fields: [
         {
-          name: 'person',
-          type: 'relationship',
-          relationTo: 'users',
+          name: 'photo',
+          type: 'upload',
+          relationTo: 'media',
         },
         {
-          name: 'displayName',
+          name: 'name',
           type: 'text',
           required: true,
         },
@@ -98,11 +98,6 @@ export const SiteContent: CollectionConfig = {
         {
           name: 'affiliation',
           type: 'text',
-        },
-        {
-          name: 'photo',
-          type: 'upload',
-          relationTo: 'media',
         },
         {
           name: 'biography',

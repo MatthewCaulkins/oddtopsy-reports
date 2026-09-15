@@ -5,8 +5,8 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { Header } from '@/app/(frontend)/components/Header'
 import { Footer } from '@/app/(frontend)/components/Footer'
-import { Breadcrumbs } from '@/app/(frontend)/components/Breadcrumbs'
 import { SiteContentVersionHistoryExplorer } from '@/app/(frontend)/components/site-content/SiteContentVersionHistoryExplorer'
+import { EditorialNav } from '@/app/(frontend)/components/EditorialNav'
 
 type SitePage = 'papers' | 'submit' | 'about' | 'subscribe'
 
@@ -97,21 +97,7 @@ export default async function SiteContentHistoryPage({ params, searchParams }: P
     <main className="site">
       <Header />
 
-      <Breadcrumbs
-        items={[
-          {
-            label: pageConfig[rawPage].label,
-            href: pageConfig[rawPage].publicHref,
-          },
-          {
-            label: 'Editor',
-            href: `/editorial/pages/${rawPage}?mode=edit`,
-          },
-          {
-            label: 'Version History',
-          },
-        ]}
-      />
+      <EditorialNav user={user} active="papers" />
 
       <section className="page-hero page-editor">
         <SiteContentVersionHistoryExplorer

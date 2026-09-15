@@ -5,17 +5,16 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { Header } from '@/app/(frontend)/components/Header'
 import { Footer } from '@/app/(frontend)/components/Footer'
-import { Breadcrumbs } from '@/app/(frontend)/components/Breadcrumbs'
 import { EditorialToolbar } from '@/app/(frontend)/components/EditorialToolbar'
 import { SiteContentForm } from '@/app/(frontend)/components/site-content/SiteContentForm'
 import { updateSiteContent } from './actions'
-import type { SiteContent } from '@/payload-types'
 import { SiteContentVersionHistory } from '@/app/(frontend)/components/site-content/SiteContentVersionHistory'
 
 import { AboutContent } from '@/app/(frontend)/components/site-content/AboutContent'
 import { SubmitContent } from '@/app/(frontend)/components/site-content/SubmitContent'
 import { SubscribeContent } from '@/app/(frontend)/components/site-content/SubscribeContent'
 import { PapersContent } from '@/app/(frontend)/components/site-content/PapersContent'
+import { EditorialNav } from '@/app/(frontend)/components/EditorialNav'
 
 const allowedPages = ['papers', 'submit', 'about', 'subscribe'] as const
 
@@ -111,17 +110,7 @@ export default async function EditorialPage({ params, searchParams }: Props) {
     <main className="site">
       <Header />
 
-      <Breadcrumbs
-        items={[
-          {
-            label: configForPage.label,
-            href: configForPage.publicHref,
-          },
-          {
-            label: 'Editor',
-          },
-        ]}
-      />
+      <EditorialNav user={user} active="pages" />
 
       <EditorialToolbar
         mode={mode}

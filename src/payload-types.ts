@@ -223,6 +223,9 @@ export interface Submission {
     | 'accepted'
     | 'rejected'
     | 'published';
+  trashed?: boolean | null;
+  trashedAt?: string | null;
+  trashedBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -297,7 +300,7 @@ export interface Media {
  */
 export interface User {
   id: number;
-  role: 'pending' | 'editor' | 'admin';
+  role: 'pending' | 'editor' | 'manager' | 'admin';
   profile?: {
     displayName?: string | null;
     title?: string | null;
@@ -340,11 +343,10 @@ export interface SiteContent {
   secondaryContent?: string | null;
   editorialBoard?:
     | {
-        person?: (number | null) | User;
-        displayName: string;
+        photo?: (number | null) | Media;
+        name: string;
         title?: string | null;
         affiliation?: string | null;
-        photo?: (number | null) | Media;
         biography?: string | null;
         id?: string | null;
       }[]
@@ -575,6 +577,9 @@ export interface SubmissionsSelect<T extends boolean = true> {
       };
   authorMessage?: T;
   workflowStatus?: T;
+  trashed?: T;
+  trashedAt?: T;
+  trashedBy?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -593,11 +598,10 @@ export interface SiteContentSelect<T extends boolean = true> {
   editorialBoard?:
     | T
     | {
-        person?: T;
-        displayName?: T;
+        photo?: T;
+        name?: T;
         title?: T;
         affiliation?: T;
-        photo?: T;
         biography?: T;
         id?: T;
       };

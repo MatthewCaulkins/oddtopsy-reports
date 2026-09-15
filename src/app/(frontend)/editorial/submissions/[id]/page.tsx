@@ -3,7 +3,6 @@ import { notFound, redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
-import { Breadcrumbs } from '@/app/(frontend)/components/Breadcrumbs'
 import { Header } from '../../../components/Header'
 import { Footer } from '../../../components/Footer'
 import { EditorialToolbar } from '../../../components/EditorialToolbar'
@@ -12,6 +11,13 @@ import { SubmissionForm } from '../../../components/submission-form/SubmissionFo
 import { updateSubmission } from './actions'
 import { VersionHistory } from '../../../components/VersionHistory'
 import { approveSubmission } from './actions'
+import { EditorialNav } from '@/app/(frontend)/components/EditorialNav'
+
+import {
+  moveSubmissionToTrash,
+  restoreSubmission,
+  deleteSubmissionPermanently,
+} from '../../trash/actions'
 
 type Props = {
   params: Promise<{
@@ -63,16 +69,22 @@ export default async function EditorialSubmissionPage({ params, searchParams }: 
     <main className="site">
       <Header />
 
-      <Breadcrumbs items={[{ label: 'Papers', href: '/articles' }, { label: submission.title }]} />
+      <EditorialNav user={user} active="papers" />
 
       <div id="editorial-top">
         <EditorialToolbar
           mode={mode}
           previewHref={`/editorial/submissions/${submission.id}?mode=preview`}
           editHref={`/editorial/submissions/${submission.id}?mode=edit`}
-          publishedHref={`/articles/${submission.id}`}
+          publishedHref={`/articles/${submission.slug}`}
           publishAction={submission.workflowStatus !== 'published' ? approveSubmission : undefined}
           publishId={submission.id}
+          isTrashed={Boolean(submission.trashed)}
+          trashAction={moveSubmissionToTrash}
+          restoreAction={restoreSubmission}
+          deleteAction={deleteSubmissionPermanently}
+          trashId={submission.id}
+          canDeletePermanently={user.role === 'manager' || user.role === 'admin'}
         />
       </div>
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useFormStatus } from 'react-dom'
 import type { FocusArea, Media, Submission } from '@/payload-types'
 import { FileUpload, type ExistingFile } from '../FileUpload'
 import { PayloadManuscriptEditor } from './PayloadManuscriptEditor'
@@ -14,6 +15,30 @@ type CoAuthor = {
 type FormError = {
   name: string
   label: string
+}
+
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024
+const MAX_PDF_SIZE = 20 * 1024 * 1024
+
+// Leave some room below Next's 25 MB request limit
+// for multipart/form-data overhead and ordinary fields.
+const MAX_TOTAL_UPLOAD_SIZE = 23 * 1024 * 1024
+
+function SubmissionButton({ label }: { label: string }) {
+  const { pending } = useFormStatus()
+
+  return (
+    <button className="button primary submit-button" type="submit" disabled={pending}>
+      {pending ? (
+        <>
+          <span className="button-spinner" aria-hidden="true" />
+          Submitting…
+        </>
+      ) : (
+        label
+      )}
+    </button>
+  )
 }
 
 type SubmissionFormProps = {
@@ -116,7 +141,6 @@ export function SubmissionForm({
   )
 
   const [errors, setErrors] = useState<FormError[]>([])
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
   function hasError(name: string) {
     return errors.some((error) => error.name === name)
@@ -190,40 +214,40 @@ export function SubmissionForm({
       }
     }
 
-    function lexicalHasContent(rawValue: string) {
-      if (!rawValue.trim()) return false
+    // function lexicalHasContent(rawValue: string) {
+    //   if (!rawValue.trim()) return false
 
-      try {
-        const value = JSON.parse(rawValue)
+    //   try {
+    //     const value = JSON.parse(rawValue)
 
-        function nodeHasContent(node: unknown): boolean {
-          if (!node || typeof node !== 'object') return false
+    //     function nodeHasContent(node: unknown): boolean {
+    //       if (!node || typeof node !== 'object') return false
 
-          if ('text' in node && typeof node.text === 'string' && node.text.trim()) {
-            return true
-          }
+    //       if ('text' in node && typeof node.text === 'string' && node.text.trim()) {
+    //         return true
+    //       }
 
-          // A block such as RichImage counts as manuscript content.
-          if ('type' in node && (node.type === 'block' || node.type === 'inlineBlock')) {
-            return true
-          }
+    //       // A block such as RichImage counts as manuscript content.
+    //       if ('type' in node && (node.type === 'block' || node.type === 'inlineBlock')) {
+    //         return true
+    //       }
 
-          if ('children' in node && Array.isArray(node.children)) {
-            return node.children.some(nodeHasContent)
-          }
+    //       if ('children' in node && Array.isArray(node.children)) {
+    //         return node.children.some(nodeHasContent)
+    //       }
 
-          if ('root' in node && node.root && typeof node.root === 'object') {
-            return nodeHasContent(node.root)
-          }
+    //       if ('root' in node && node.root && typeof node.root === 'object') {
+    //         return nodeHasContent(node.root)
+    //       }
 
-          return false
-        }
+    //       return false
+    //     }
 
-        return nodeHasContent(value)
-      } catch {
-        return false
-      }
-    }
+    //     return nodeHasContent(value)
+    //   } catch {
+    //     return false
+    //   }
+    // }
 
     if (submissionType === 'editor') {
       const manuscriptBody = form.elements.namedItem('manuscriptBody')
@@ -244,6 +268,29 @@ export function SubmissionForm({
       }
     }
 
+    let totalUploadSize = 0
+
+    Array.from(form.elements).forEach((element) => {
+      if (!(element instanceof HTMLInputElement)) {
+        return
+      }
+
+      if (element.type !== 'file' || !element.files) {
+        return
+      }
+
+      Array.from(element.files).forEach((file) => {
+        totalUploadSize += file.size
+      })
+    })
+
+    if (totalUploadSize > MAX_TOTAL_UPLOAD_SIZE) {
+      nextErrors.push({
+        name: 'uploadSize',
+        label: 'The combined size of new uploads must be 23 MB or smaller.',
+      })
+    }
+
     return nextErrors
   }
 
@@ -257,6 +304,7 @@ export function SubmissionForm({
 
         if (nextErrors.length > 0) {
           event.preventDefault()
+
           setErrors(nextErrors)
 
           document.querySelector('.form-error-summary')?.scrollIntoView({
@@ -268,7 +316,6 @@ export function SubmissionForm({
         }
 
         setErrors([])
-        setIsSubmitting(true)
       }}
     >
       {isEdit && submission?.id && <input type="hidden" name="id" value={submission.id} />}
@@ -310,6 +357,7 @@ export function SubmissionForm({
           name="featuredImage"
           label="Featured Image"
           accept="image/*"
+          maxSize={MAX_IMAGE_SIZE}
           required={!hasExistingFeaturedImage}
           invalid={hasError('featuredImage')}
           existingFiles={existingFeaturedFiles}
@@ -561,6 +609,7 @@ export function SubmissionForm({
             name="manuscriptPDF"
             label="Manuscript PDF"
             accept="application/pdf"
+            maxSize={MAX_PDF_SIZE}
             required={!hasExistingPDF}
             invalid={hasError('manuscriptPDF')}
             existingFiles={existingPDFFiles}
@@ -592,6 +641,7 @@ export function SubmissionForm({
           label="Supporting Images"
           accept="image/*"
           multiple
+          maxSize={MAX_IMAGE_SIZE}
           existingFiles={existingSupportingFiles}
           onRemoveExisting={(id) => {
             setExistingSupportingFiles((current) => current.filter((file) => file.id !== id))
@@ -631,9 +681,7 @@ export function SubmissionForm({
         </div>
       </section>
 
-      <button className="button primary submit-button" type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Submitting…' : submitLabel}
-      </button>
+      <SubmissionButton label={submitLabel} />
     </form>
   )
 }

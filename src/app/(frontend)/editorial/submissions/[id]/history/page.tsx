@@ -3,10 +3,10 @@ import { notFound, redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
-import { Breadcrumbs } from '@/app/(frontend)/components/Breadcrumbs'
 import { Header } from '@/app/(frontend)/components/Header'
 import { Footer } from '@/app/(frontend)/components/Footer'
 import { VersionHistoryExplorer } from '@/app/(frontend)/components/version-history/VersionHistoryExplorer'
+import { EditorialNav } from '@/app/(frontend)/components/EditorialNav'
 
 type Props = {
   params: Promise<{
@@ -57,16 +57,7 @@ export default async function SubmissionHistoryPage({ params, searchParams }: Pr
     <main className="site">
       <Header />
 
-      <Breadcrumbs
-        items={[
-          { label: 'Papers', href: '/articles' },
-          {
-            label: submission.title,
-            href: `/editorial/submissions/${submission.id}?mode=edit`,
-          },
-          { label: 'Version History' },
-        ]}
-      />
+      <EditorialNav user={user} active="papers" />
 
       <section className="page-hero page-editor">
         <VersionHistoryExplorer

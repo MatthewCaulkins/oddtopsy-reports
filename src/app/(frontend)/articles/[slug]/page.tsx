@@ -32,6 +32,11 @@ export default async function SinglePaperPage({ params }: Props) {
           },
         },
         {
+          trashed: {
+            not_equals: true,
+          },
+        },
+        {
           or: [{ slug: { equals: slug } }, { id: { equals: Number(slug) || 0 } }],
         },
       ],

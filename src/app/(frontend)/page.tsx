@@ -20,9 +20,18 @@ export default async function HomePage() {
     ? await payload.find({
         collection: 'submissions',
         where: {
-          workflowStatus: {
-            not_equals: 'published',
-          },
+          and: [
+            {
+              workflowStatus: {
+                not_equals: 'published',
+              },
+            },
+            {
+              trashed: {
+                not_equals: true,
+              },
+            },
+          ],
         },
         limit: 8,
         sort: '-createdAt',
@@ -33,9 +42,18 @@ export default async function HomePage() {
   const publishedPapers = await payload.find({
     collection: 'submissions',
     where: {
-      workflowStatus: {
-        equals: 'published',
-      },
+      and: [
+        {
+          workflowStatus: {
+            equals: 'published',
+          },
+        },
+        {
+          trashed: {
+            not_equals: true,
+          },
+        },
+      ],
     },
     limit: 8,
     sort: '-publishedDate',

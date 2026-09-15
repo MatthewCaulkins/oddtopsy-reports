@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 
 import { signup, type SignupState } from './actions'
 
@@ -8,6 +8,14 @@ const initialState: SignupState = {}
 
 export function SignupForm() {
   const [state, action, pending] = useActionState(signup, initialState)
+
+  const [displayName, setDisplayName] = useState('')
+
+  const [email, setEmail] = useState('')
+
+  const [password, setPassword] = useState('')
+
+  const [confirmPassword, setConfirmPassword] = useState('')
 
   if (state.success) {
     return (
@@ -30,19 +38,44 @@ export function SignupForm() {
       <div className="form-row">
         <label htmlFor="displayName">Name</label>
 
-        <input id="displayName" name="displayName" type="text" autoComplete="name" required />
+        <input
+          id="displayName"
+          name="displayName"
+          type="text"
+          autoComplete="name"
+          value={displayName}
+          onChange={(event) => setDisplayName(event.target.value)}
+          required
+        />
       </div>
 
       <div className="form-row">
         <label htmlFor="email">Email</label>
 
-        <input id="email" name="email" type="email" autoComplete="email" required />
+        <input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          required
+        />
       </div>
 
       <div className="form-row">
         <label htmlFor="password">Password</label>
 
-        <input id="password" name="password" type="password" autoComplete="new-password" required />
+        <input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          minLength={8}
+          required
+        />
       </div>
 
       <div className="form-row">
@@ -53,6 +86,9 @@ export function SignupForm() {
           name="confirmPassword"
           type="password"
           autoComplete="new-password"
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
+          minLength={8}
           required
         />
       </div>

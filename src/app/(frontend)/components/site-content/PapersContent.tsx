@@ -73,9 +73,18 @@ export async function PapersContent({ content, searchParams = {}, editorial = fa
           collection: 'submissions',
 
           where: {
-            workflowStatus: {
-              not_equals: 'published',
-            },
+            and: [
+              {
+                workflowStatus: {
+                  not_equals: 'published',
+                },
+              },
+              {
+                trashed: {
+                  not_equals: true,
+                },
+              },
+            ],
           },
 
           sort: '-createdAt',
@@ -95,6 +104,11 @@ export async function PapersContent({ content, searchParams = {}, editorial = fa
     {
       workflowStatus: {
         equals: 'published',
+      },
+    },
+    {
+      trashed: {
+        not_equals: true,
       },
     },
   ]

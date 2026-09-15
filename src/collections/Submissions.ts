@@ -263,5 +263,28 @@ export const Submissions: CollectionConfig = {
         update: ({ req }) => Boolean(req.user),
       },
     },
+    {
+      name: 'trashed',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'trashedAt',
+      type: 'date',
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'trashedBy',
+      type: 'relationship',
+      relationTo: 'users',
+      admin: {
+        position: 'sidebar',
+      },
+    },
   ],
 }

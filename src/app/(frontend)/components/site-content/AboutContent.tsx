@@ -40,24 +40,10 @@ export function AboutContent({ content }: Props) {
         {content?.editorialBoard && content.editorialBoard.length > 0 ? (
           <div className="editor-grid">
             {content.editorialBoard.map((member, index) => {
-              const person = typeof member.person === 'object' ? member.person : null
-
-              const profile = person?.profile
-
-              const displayName =
-                member.displayName ||
-                profile?.displayName ||
-                person?.email ||
-                'Editorial Board Member'
-
-              const title = member.title || profile?.title
-
-              const affiliation = member.affiliation || profile?.affiliation
-
-              const biography = member.biography || profile?.biography
+              const displayName = member.name || 'Editorial Board Member'
 
               const photo =
-                typeof profile?.photo === 'object' && profile.photo?.url ? profile.photo.url : null
+                typeof member.photo === 'object' && member.photo?.url ? member.photo.url : null
 
               return (
                 <article
@@ -69,11 +55,11 @@ export function AboutContent({ content }: Props) {
                   <div>
                     <h3>{displayName}</h3>
 
-                    {title && <p className="editor-title">{title}</p>}
+                    {member.title && <p className="editor-title">{member.title}</p>}
 
-                    {affiliation && <p>{affiliation}</p>}
+                    {member.affiliation && <p>{member.affiliation}</p>}
 
-                    {biography && <p>{biography}</p>}
+                    {member.biography && <p>{member.biography}</p>}
                   </div>
                 </article>
               )

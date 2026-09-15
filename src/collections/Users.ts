@@ -8,6 +8,11 @@ export const Users: CollectionConfig = {
     hidden: ({ user }) => user?.role !== 'admin',
   },
   auth: true,
+  access: {
+    admin: ({ req }) => {
+      return req.user?.role === 'admin'
+    },
+  },
   hooks: {
     beforeLogin: [
       ({ user }) => {
@@ -35,6 +40,10 @@ export const Users: CollectionConfig = {
         {
           label: 'Editor',
           value: 'editor',
+        },
+        {
+          label: 'Manager',
+          value: 'manager',
         },
         {
           label: 'Admin',

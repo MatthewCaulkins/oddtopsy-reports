@@ -26,7 +26,7 @@ services:
       - .env
     profiles:
       - seed
-      
+
   postgres:
     image: postgres:16
     restart: always

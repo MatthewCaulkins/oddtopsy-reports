@@ -4,6 +4,7 @@
   "description": "A blank template to get started with Payload 3.0",
   "license": "MIT",
   "type": "module",
+  "packageManager": "pnpm@10.23.0",
   "scripts": {
     "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
     "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
@@ -17,7 +18,8 @@
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" playwright test --config=playwright.config.ts",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
     "seed:focus-areas": "tsx src/scripts/seedFocusAreas.ts",
-    "seed:site-content": "tsx src/scripts/seedSiteContent.ts"
+    "seed:site-content": "tsx src/scripts/seedSiteContent.ts",
+    "create:admin": "tsx src/scripts/createAdmin.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.88.0",
