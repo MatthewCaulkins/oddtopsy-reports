@@ -56,7 +56,7 @@ export default async function EditorialSubmissionPage({ params, searchParams }: 
     },
     sort: '-createdAt',
     limit: 4,
-    depth: 1,
+    depth: 2,
   })
 
   const focusAreas = await payload.find({

@@ -14,6 +14,62 @@ function isSitePage(value: string): value is SitePage {
   return allowedPages.includes(value as SitePage)
 }
 
+type EditorialBoardMemberInput = {
+  id?: string
+  photo?: number | null
+  name: string
+  title: string
+  affiliation: string
+  biography: string
+}
+
+function parseEditorialBoard(value: FormDataEntryValue | null): EditorialBoardMemberInput[] {
+  if (typeof value !== 'string' || !value) {
+    return []
+  }
+
+  let parsed: unknown
+
+  try {
+    parsed = JSON.parse(value)
+  } catch {
+    throw new Error('Invalid editorial board data.')
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error('Invalid editorial board data.')
+  }
+
+  return parsed.map((member) => {
+    if (!member || typeof member !== 'object') {
+      throw new Error('Invalid editorial board member.')
+    }
+
+    const item = member as Record<string, unknown>
+
+    const name = typeof item.name === 'string' ? item.name.trim() : ''
+
+    if (!name) {
+      throw new Error('Editorial board members must have a name.')
+    }
+
+    let photo: number | null = null
+
+    if (typeof item.photo === 'number' && Number.isInteger(item.photo)) {
+      photo = item.photo
+    }
+
+    return {
+      ...(typeof item.id === 'string' && item.id ? { id: item.id } : {}),
+      photo,
+      name,
+      title: typeof item.title === 'string' ? item.title.trim() : '',
+      affiliation: typeof item.affiliation === 'string' ? item.affiliation.trim() : '',
+      biography: typeof item.biography === 'string' ? item.biography.trim() : '',
+    }
+  })
+}
+
 export async function updateSiteContent(formData: FormData) {
   const id = Number(formData.get('id'))
   const page = String(formData.get('page') || '')
@@ -34,6 +90,9 @@ export async function updateSiteContent(formData: FormData) {
     redirect('/login')
   }
 
+  const editorialBoard =
+    page === 'about' ? parseEditorialBoard(formData.get('editorialBoard')) : undefined
+
   await payload.update({
     collection: 'site-content',
     id,
@@ -43,6 +102,9 @@ export async function updateSiteContent(formData: FormData) {
       content: String(formData.get('content') || ''),
       secondaryTitle: String(formData.get('secondaryTitle') || '').trim(),
       secondaryContent: String(formData.get('secondaryContent') || ''),
+      ...(page === 'about' && {
+        editorialBoard,
+      }),
     },
   })
 
@@ -93,6 +155,9 @@ export async function restoreSiteContentVersion(formData: FormData) {
       content: source.content,
       secondaryTitle: source.secondaryTitle,
       secondaryContent: source.secondaryContent,
+      ...(page === 'about' && {
+        editorialBoard: source.editorialBoard,
+      }),
     },
   })
 

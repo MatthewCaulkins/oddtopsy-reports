@@ -27,7 +27,12 @@ export async function POST(request: Request) {
       )
     }
 
-    const urls: string[] = []
+    const uploadedMedia: {
+      id: number | string
+      url: string
+      filename?: string | null
+      alt?: string | null
+    }[] = []
 
     for (const file of uploadedFiles) {
       if (!allowedTypes.has(file.type)) {
@@ -72,11 +77,16 @@ export async function POST(request: Request) {
       })
 
       if (media.url) {
-        urls.push(media.url)
+        uploadedMedia.push({
+          id: media.id,
+          url: media.url,
+          filename: media.filename,
+          alt: media.alt,
+        })
       }
     }
 
-    if (urls.length === 0) {
+    if (uploadedMedia.length === 0) {
       return NextResponse.json(
         {
           success: false,
@@ -92,7 +102,7 @@ export async function POST(request: Request) {
       success: true,
       error: 0,
       message: '',
-      files: urls,
+      files: uploadedMedia,
     })
   } catch (error) {
     console.error('Jodit media upload failed:', error)

@@ -50,7 +50,7 @@ export default async function SubmissionHistoryPage({ params, searchParams }: Pr
     },
     sort: 'createdAt',
     limit: 25,
-    depth: 1,
+    depth: 2,
   })
 
   return (

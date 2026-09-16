@@ -3,6 +3,8 @@
 import { useMemo, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 
+import type { SiteContent } from '@/payload-types'
+
 import {
   formatSiteContentVersionDate,
   getSiteContentVersionChanges,
@@ -111,6 +113,177 @@ function SiteContentVersionValue({
   return <HighlightedText value={text} comparison={comparisonText} side={side} />
 }
 
+type BoardMember = NonNullable<SiteContent['editorialBoard']>[number]
+
+function getBoardMemberKey(member: BoardMember, index: number): string {
+  return member.id || `${member.name || 'member'}-${index}`
+}
+
+function getPhotoId(member?: BoardMember): string {
+  if (!member?.photo) return ''
+
+  return String(typeof member.photo === 'object' ? member.photo.id : member.photo)
+}
+
+function EditorialBoardVersionValue({
+  value,
+  comparison,
+  side,
+}: {
+  value: unknown
+  comparison: unknown
+  side: DiffSide
+}) {
+  const members = Array.isArray(value) ? (value as BoardMember[]) : []
+
+  const comparisonMembers = Array.isArray(comparison) ? (comparison as BoardMember[]) : []
+
+  if (!members.length) {
+    return <p className="version-value-empty">No editorial board members</p>
+  }
+
+  return (
+    <div className="version-board-list">
+      {members.map((member, index) => {
+        const comparisonMember = member.id
+          ? comparisonMembers.find((item) => String(item.id) === String(member.id))
+          : comparisonMembers[index]
+
+        const photo = typeof member.photo === 'object' ? member.photo : null
+
+        const comparisonPhoto =
+          comparisonMember && typeof comparisonMember.photo === 'object'
+            ? comparisonMember.photo
+            : null
+
+        const photoChanged = getPhotoId(member) !== getPhotoId(comparisonMember)
+
+        const nameChanged = member.name !== comparisonMember?.name
+
+        const titleChanged = member.title !== comparisonMember?.title
+
+        const affiliationChanged = member.affiliation !== comparisonMember?.affiliation
+
+        const biographyChanged = member.biography !== comparisonMember?.biography
+
+        return (
+          <article className="version-board-member" key={member.id || `${member.name}-${index}`}>
+            <div
+              className={[
+                'version-board-member-photo',
+                photoChanged && `version-board-field--${side}`,
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              {photo?.url ? (
+                <img src={photo.url} alt={photo.alt || member.name || ''} />
+              ) : (
+                <div className="version-board-photo-empty">No photo</div>
+              )}
+            </div>
+
+            <dl className="version-board-member-fields">
+              <div className={nameChanged ? `version-board-field--${side}` : undefined}>
+                <dt>Name</dt>
+                <dd>{member.name || '—'}</dd>
+              </div>
+
+              <div className={titleChanged ? `version-board-field--${side}` : undefined}>
+                <dt>Title</dt>
+                <dd>{member.title || '—'}</dd>
+              </div>
+
+              <div className={affiliationChanged ? `version-board-field--${side}` : undefined}>
+                <dt>Affiliation</dt>
+                <dd>{member.affiliation || '—'}</dd>
+              </div>
+
+              <div className={biographyChanged ? `version-board-field--${side}` : undefined}>
+                <dt>Biography</dt>
+                <dd>{member.biography || '—'}</dd>
+              </div>
+            </dl>
+          </article>
+        )
+      })}
+    </div>
+  )
+}
+
+function EditorialBoardChangeSummary({ before, after }: { before: unknown; after: unknown }) {
+  const beforeMembers = Array.isArray(before) ? (before as BoardMember[]) : []
+
+  const afterMembers = Array.isArray(after) ? (after as BoardMember[]) : []
+
+  const messages: string[] = []
+
+  const beforeById = new Map(
+    beforeMembers
+      .filter((member) => member.id)
+      .map((member, index) => [member.id as string, { member, index }]),
+  )
+
+  const afterById = new Map(
+    afterMembers
+      .filter((member) => member.id)
+      .map((member, index) => [member.id as string, { member, index }]),
+  )
+
+  for (const [id, { member, index }] of afterById) {
+    const previous = beforeById.get(id)
+
+    if (!previous) {
+      messages.push(`${member.name || 'Member'} added`)
+      continue
+    }
+
+    if (previous.index !== index) {
+      messages.push(
+        `${member.name || 'Member'} moved from position ${previous.index + 1} to ${index + 1}`,
+      )
+    }
+
+    if (previous.member.name !== member.name) {
+      messages.push(`${member.name || 'Member'} name changed`)
+    }
+
+    if (previous.member.title !== member.title) {
+      messages.push(`${member.name || 'Member'} title changed`)
+    }
+
+    if (previous.member.affiliation !== member.affiliation) {
+      messages.push(`${member.name || 'Member'} affiliation changed`)
+    }
+
+    if (previous.member.biography !== member.biography) {
+      messages.push(`${member.name || 'Member'} biography changed`)
+    }
+
+    if (getPhotoId(previous.member) !== getPhotoId(member)) {
+      messages.push(`${member.name || 'Member'} photo changed`)
+    }
+  }
+
+  for (const [id, { member }] of beforeById) {
+    if (!afterById.has(id)) {
+      messages.push(`${member.name || 'Member'} removed`)
+    }
+  }
+
+  if (!messages.length) {
+    return null
+  }
+
+  return (
+    <ul className="version-board-change-summary">
+      {messages.map((message, index) => (
+        <li key={`${message}-${index}`}>{message}</li>
+      ))}
+    </ul>
+  )
+}
+
 function SiteContentVersionDiff({
   changes,
   isInitialVersion,
@@ -153,27 +326,55 @@ function SiteContentVersionDiff({
           <article className="version-diff-item" key={String(change.field)}>
             <h3>{change.label}</h3>
 
-            <div className="version-diff-columns">
-              <div className="version-diff-before">
-                <span className="version-diff-label">Before</span>
+            {change.field === 'editorialBoard' ? (
+              <>
+                <EditorialBoardChangeSummary before={change.before} after={change.after} />
 
-                <SiteContentVersionValue
-                  value={change.before}
-                  comparison={change.after}
-                  side="before"
-                />
+                <div className="version-diff-columns">
+                  <div className="version-diff-before">
+                    <span className="version-diff-label">Before</span>
+
+                    <EditorialBoardVersionValue
+                      value={change.before}
+                      comparison={change.after}
+                      side="before"
+                    />
+                  </div>
+
+                  <div className="version-diff-after">
+                    <span className="version-diff-label">After</span>
+
+                    <EditorialBoardVersionValue
+                      value={change.after}
+                      comparison={change.before}
+                      side="after"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="version-diff-columns">
+                <div className="version-diff-before">
+                  <span className="version-diff-label">Before</span>
+
+                  <SiteContentVersionValue
+                    value={change.before}
+                    comparison={change.after}
+                    side="before"
+                  />
+                </div>
+
+                <div className="version-diff-after">
+                  <span className="version-diff-label">After</span>
+
+                  <SiteContentVersionValue
+                    value={change.after}
+                    comparison={change.before}
+                    side="after"
+                  />
+                </div>
               </div>
-
-              <div className="version-diff-after">
-                <span className="version-diff-label">After</span>
-
-                <SiteContentVersionValue
-                  value={change.after}
-                  comparison={change.before}
-                  side="after"
-                />
-              </div>
-            </div>
+            )}
           </article>
         ))}
       </div>

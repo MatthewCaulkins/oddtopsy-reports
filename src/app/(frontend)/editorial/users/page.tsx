@@ -110,21 +110,22 @@ export default async function EditorialUsersPage() {
                     <span className="editorial-role-badge">Admin</span>
                   ) : (
                     <>
-                      <form action={updateUserRole}>
+                      <form key={`${item.id}-${item.role}`} action={updateUserRole}>
                         <input type="hidden" name="id" value={item.id} />
 
-                        <select
-                          name="role"
-                          defaultValue={item.role}
-                          disabled={isCurrentUser && user.role === 'manager'}
-                        >
-                          <option value="editor">Editor</option>
+                        <div className="select-wrap">
+                          <select
+                            name="role"
+                            defaultValue={item.role}
+                            disabled={isCurrentUser && user.role === 'manager'}
+                          >
+                            <option value="editor">Editor</option>
 
-                          <option value="manager">Manager</option>
+                            <option value="manager">Manager</option>
 
-                          <option value="pending">Pending</option>
-                        </select>
-
+                            <option value="pending">Pending / Disable Login</option>
+                          </select>
+                        </div>
                         <button
                           className="button secondary"
                           type="submit"

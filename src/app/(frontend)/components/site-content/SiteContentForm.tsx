@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import type { SiteContent } from '@/payload-types'
 import { PayloadManuscriptEditor } from '@/app/(frontend)/components/submission-form/PayloadManuscriptEditor'
+import { EditorialBoardEditor } from './EditorialBoardEditor'
 
 type Props = {
   content: SiteContent
@@ -13,6 +14,7 @@ type Props = {
 export function SiteContentForm({ content, action }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const isAbout = content.page === 'about'
   const isSubscribe = content.page === 'subscribe'
 
   return (
@@ -95,6 +97,8 @@ export function SiteContentForm({ content, action }: Props) {
           </div>
         </section>
       )}
+
+      {isAbout && <EditorialBoardEditor initialMembers={content.editorialBoard} />}
 
       <button className="button primary submit-button" type="submit" disabled={isSubmitting}>
         {isSubmitting ? 'Saving…' : 'Save Changes'}

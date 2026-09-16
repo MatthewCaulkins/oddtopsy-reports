@@ -25,6 +25,8 @@ export function SiteContentVersionHistory({
     <section className="version-history">
       <div className="section-heading-rule">
         <h2>Version History</h2>
+
+        <a href={`/editorial/pages/${page}/history`}>View all →</a>
       </div>
 
       <div className="version-list">
@@ -56,7 +58,19 @@ export function SiteContentVersionHistory({
                   changes.length > 0 ? (
                     <ul className="version-change-summary">
                       {changes.slice(0, 3).map((change) => (
-                        <li key={String(change.field)}>{change.label} changed</li>
+                        <li key={String(change.field)}>
+                          {change.summary?.length
+                            ? `${change.label}: ${change.summary[0]}`
+                            : `${change.label} changed`}
+
+                          {change.summary && change.summary.length > 1 && (
+                            <ul className="version-change-detail">
+                              {change.summary.slice(1, 3).map((summary) => (
+                                <li key={summary}>{summary}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </li>
                       ))}
 
                       {changes.length > 3 && <li>+{changes.length - 3} more changes</li>}
@@ -72,15 +86,6 @@ export function SiteContentVersionHistory({
           )
         })}
       </div>
-
-      {totalVersions > displayLimit && (
-        <a
-          className="button secondary version-history__view-all"
-          href={`/editorial/pages/${page}/history`}
-        >
-          View all {totalVersions} versions
-        </a>
-      )}
     </section>
   )
 }

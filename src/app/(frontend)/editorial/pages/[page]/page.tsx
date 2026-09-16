@@ -103,7 +103,7 @@ export default async function EditorialPage({ params, searchParams }: Props) {
     },
     sort: '-createdAt',
     limit: 4,
-    depth: 1,
+    depth: 2,
   })
 
   return (

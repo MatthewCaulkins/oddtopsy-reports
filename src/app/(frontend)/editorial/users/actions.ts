@@ -64,6 +64,7 @@ export async function approveUser(formData: FormData) {
   })
 
   revalidatePath('/editorial/users')
+  redirect('/editorial/users')
 }
 
 export async function rejectUser(formData: FormData) {
@@ -86,6 +87,7 @@ export async function rejectUser(formData: FormData) {
   })
 
   revalidatePath('/editorial/users')
+  redirect('/editorial/users')
 }
 
 export async function updateUserRole(formData: FormData) {
@@ -130,6 +132,7 @@ export async function updateUserRole(formData: FormData) {
   })
 
   revalidatePath('/editorial/users')
+  //   redirect('/editorial/users')
 }
 
 export async function promoteToAdmin(formData: FormData) {
@@ -159,4 +162,5 @@ export async function promoteToAdmin(formData: FormData) {
   })
 
   revalidatePath('/editorial/users')
+  redirect('/editorial/users')
 }

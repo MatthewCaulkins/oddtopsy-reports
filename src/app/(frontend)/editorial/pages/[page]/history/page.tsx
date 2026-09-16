@@ -90,7 +90,7 @@ export default async function SiteContentHistoryPage({ params, searchParams }: P
     },
     sort: 'createdAt',
     limit: 25,
-    depth: 1,
+    depth: 2,
   })
 
   return (

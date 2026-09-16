@@ -26,6 +26,8 @@ export function VersionHistory({
     <section className="version-history">
       <div className="section-heading-rule">
         <h2>Version History</h2>
+
+        <a href={`/editorial/submissions/${submissionId}/history`}>View all →</a>
       </div>
 
       <div className="version-list">
@@ -73,14 +75,6 @@ export function VersionHistory({
           )
         })}
       </div>
-      {totalVersions > displayLimit && (
-        <a
-          className="button secondary version-history__view-all"
-          href={`/editorial/submissions/${submissionId}/history`}
-        >
-          View all {totalVersions} versions
-        </a>
-      )}
     </section>
   )
 }
