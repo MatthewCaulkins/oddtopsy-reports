@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { s3Storage } from '@payloadcms/storage-s3'
 
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -17,6 +18,17 @@ import { richTextEditor } from '@/editor/richTextEditor'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
+const useS3 = process.env.S3_ENABLED === 'true'
+// const s3Bucket = process.env.S3_BUCKET
+
+const useDatabaseSSL = process.env.DATABASE_SSL === 'true'
+
+const databaseURL =
+  process.env.DATABASE_URL ||
+  (process.env.DB_USER && process.env.DB_PASSWORD && process.env.DB_HOST && process.env.DB_NAME
+    ? `postgresql://${encodeURIComponent(process.env.DB_USER)}:${encodeURIComponent(process.env.DB_PASSWORD)}@${process.env.DB_HOST}:${process.env.DB_PORT || '5432'}/${process.env.DB_NAME}`
+    : '')
 
 export default buildConfig({
   admin: {
@@ -37,9 +49,30 @@ export default buildConfig({
   },
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URL || '',
+      connectionString: databaseURL,
+      ...(useDatabaseSSL
+        ? {
+            ssl: {
+              rejectUnauthorized: false,
+            },
+          }
+        : {}),
     },
   }),
   sharp,
-  plugins: [],
+  plugins: [
+    s3Storage({
+      enabled: useS3,
+
+      collections: {
+        media: true,
+      },
+
+      bucket: process.env.S3_BUCKET || '',
+
+      config: {
+        region: process.env.AWS_REGION || 'us-east-1',
+      },
+    }),
+  ],
 })
