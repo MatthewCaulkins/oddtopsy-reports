@@ -1,0 +1,56 @@
+import type { Payload } from 'payload'
+
+import type { User } from '@/payload-types'
+import { sendAccountInvite, siteURL } from '@/lib/notifications'
+
+/*
+ * Where approved staff get their sign-in. Approval decides *who*
+ * gets an account (Payload); the identity provider handles *how*
+ * they sign in.
+ *
+ * - 'payload' (now, and local development): a set-password invite
+ *   using Payload's own password login.
+ * - 'cognito' (next step): create the Cognito user, store its sub on
+ *   the User, and let Cognito send the invite. Linking must only ever
+ *   use the sub returned by our own AdminCreateUser call, never a
+ *   match on email.
+ *
+ * invite() must be safe to call again for the same user; callers
+ * record each attempt on the access request.
+ */
+export type IdentityProvider = {
+  name: string
+  invite: (payload: Payload, user: User) => Promise<void>
+}
+
+export const inviteValidityDays = 7
+
+const payloadPasswordProvider: IdentityProvider = {
+  name: 'payload',
+  async invite(payload, user) {
+    const expiration = inviteValidityDays * 24 * 60 * 60 * 1000
+
+    // Issues a fresh set-password token each time, replacing any earlier one.
+    const token = await payload.forgotPassword({
+      collection: 'users',
+      data: { email: user.email },
+      disableEmail: true,
+      expiration,
+    })
+
+    if (!token) {
+      throw new Error('Could not issue a set-password token.')
+    }
+
+    await sendAccountInvite(
+      payload,
+      user,
+      `${siteURL}/reset-password?token=${encodeURIComponent(token)}&invite=1`,
+      new Date(Date.now() + expiration),
+    )
+  },
+}
+
+export function getIdentityProvider(): IdentityProvider {
+  return payloadPasswordProvider
+}

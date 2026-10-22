@@ -3,14 +3,14 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
-import { hasRole, type ActiveRole } from '@/access/roles'
+import { hasRole, type Role } from '@/access/roles'
 
 /*
  * Server-side guard for server actions and pages.
  * Server actions are public endpoints, so every one that
  * changes data must call this before touching Payload.
  */
-export async function requireRole(minimum: ActiveRole) {
+export async function requireRole(minimum: Role) {
   const headers = await getHeaders()
   const payload = await getPayload({ config })
 

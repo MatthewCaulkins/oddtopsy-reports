@@ -67,6 +67,7 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    'access-requests': AccessRequest;
     'editor-notes': EditorNote;
     'focus-areas': FocusArea;
     media: Media;
@@ -80,6 +81,7 @@ export interface Config {
   };
   collectionsJoins: {};
   collectionsSelect: {
+    'access-requests': AccessRequestsSelect<false> | AccessRequestsSelect<true>;
     'editor-notes': EditorNotesSelect<false> | EditorNotesSelect<true>;
     'focus-areas': FocusAreasSelect<false> | FocusAreasSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -127,6 +129,123 @@ export interface UserAuthOperations {
   unlock: {
     email: string;
     password: string;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "access-requests".
+ */
+export interface AccessRequest {
+  id: number;
+  name: string;
+  email: string;
+  affiliation?: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  source: 'form' | 'migrated';
+  grantedRole?: ('editor' | 'manager') | null;
+  reviewer?: (number | null) | User;
+  decisionDate?: string | null;
+  rejectionNote?: string | null;
+  /**
+   * The account created when this request was approved.
+   */
+  user?: (number | null) | User;
+  provisioning?: {
+    status?: ('not_started' | 'in_progress' | 'complete' | 'failed') | null;
+    attempts?: number | null;
+    lastAttemptAt?: string | null;
+    lastError?: string | null;
+    inviteSentAt?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  role: 'editor' | 'manager' | 'admin';
+  /**
+   * Invited until the first sign-in. Only active accounts have editorial access.
+   */
+  accountStatus: 'invited' | 'active' | 'disabled';
+  profile?: {
+    displayName?: string | null;
+    title?: string | null;
+    affiliation?: string | null;
+    photo?: (number | null) | Media;
+    biography?: string | null;
+    displayOnAboutPage?: boolean | null;
+    displayOrder?: number | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  alt: string;
+  /**
+   * Set automatically: public while a published paper or site page uses this file, otherwise staff only.
+   */
+  audience?: ('staff' | 'public') | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    card?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    square?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    hero?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
   };
 }
 /**
@@ -255,90 +374,6 @@ export interface FocusArea {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: number;
-  alt: string;
-  /**
-   * Set automatically: public while a published paper or site page uses this file, otherwise staff only.
-   */
-  audience?: ('staff' | 'public') | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-  sizes?: {
-    card?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    square?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    hero?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-  };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: number;
-  role: 'pending' | 'editor' | 'manager' | 'admin';
-  profile?: {
-    displayName?: string | null;
-    title?: string | null;
-    affiliation?: string | null;
-    photo?: (number | null) | Media;
-    biography?: string | null;
-    displayOnAboutPage?: boolean | null;
-    displayOrder?: number | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-content".
  */
 export interface SiteContent {
@@ -387,6 +422,10 @@ export interface PayloadKv {
 export interface PayloadLockedDocument {
   id: number;
   document?:
+    | ({
+        relationTo: 'access-requests';
+        value: number | AccessRequest;
+      } | null)
     | ({
         relationTo: 'editor-notes';
         value: number | EditorNote;
@@ -452,6 +491,33 @@ export interface PayloadMigration {
   batch?: number | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "access-requests_select".
+ */
+export interface AccessRequestsSelect<T extends boolean = true> {
+  name?: T;
+  email?: T;
+  affiliation?: T;
+  status?: T;
+  source?: T;
+  grantedRole?: T;
+  reviewer?: T;
+  decisionDate?: T;
+  rejectionNote?: T;
+  user?: T;
+  provisioning?:
+    | T
+    | {
+        status?: T;
+        attempts?: T;
+        lastAttemptAt?: T;
+        lastError?: T;
+        inviteSentAt?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -630,6 +696,7 @@ export interface SiteContentSelect<T extends boolean = true> {
  */
 export interface UsersSelect<T extends boolean = true> {
   role?: T;
+  accountStatus?: T;
   profile?:
     | T
     | {

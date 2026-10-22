@@ -2,51 +2,72 @@ import type { User } from '@/payload-types'
 
 export type Role = User['role']
 
-export type ActiveRole = Exclude<Role, 'pending'>
+export type AccountStatus = NonNullable<User['accountStatus']>
 
 const roleRank: Record<Role, number> = {
-  pending: 0,
   editor: 1,
   manager: 2,
   admin: 3,
 }
 
+type AccountHolder = {
+  id: number | string
+  role?: Role | null
+  accountStatus?: AccountStatus | null
+}
+
 /*
- * True when the user holds at least the given role.
- * Pending users and anonymous visitors never pass.
+ * Role says what someone may do; account status says whether they
+ * may do it right now. Only active accounts get editorial access.
+ * Invited accounts become active on first sign-in; disabled ones
+ * keep their role but lose access.
  */
-export function hasRole(user: { role?: Role | null } | null | undefined, minimum: ActiveRole) {
-  if (!user?.role) return false
+export function isActive(user: Pick<AccountHolder, 'accountStatus'> | null | undefined) {
+  return user?.accountStatus === 'active'
+}
+
+/*
+ * True when the user is active and holds at least the given role.
+ * Anonymous visitors never pass.
+ */
+export function hasRole(
+  user: Pick<AccountHolder, 'role' | 'accountStatus'> | null | undefined,
+  minimum: Role,
+) {
+  if (!user?.role || !isActive(user)) return false
 
   return roleRank[user.role] >= roleRank[minimum]
 }
 
-type RoleHolder = {
-  id: number | string
-  role?: Role | null
+export const assignableRoles = ['editor', 'manager'] as const satisfies Role[]
+
+export type AssignableRole = (typeof assignableRoles)[number]
+
+export function isAssignableRole(value: unknown): value is AssignableRole {
+  return assignableRoles.includes(value as AssignableRole)
 }
 
-export const assignableRoles = ['pending', 'editor', 'manager'] as const satisfies Role[]
+export const settableAccountStatuses = ['active', 'disabled'] as const satisfies AccountStatus[]
 
-export function isAssignableRole(value: unknown): value is (typeof assignableRoles)[number] {
-  return assignableRoles.includes(value as (typeof assignableRoles)[number])
+export type SettableAccountStatus = (typeof settableAccountStatuses)[number]
+
+export function isSettableAccountStatus(value: unknown): value is SettableAccountStatus {
+  return settableAccountStatuses.includes(value as SettableAccountStatus)
 }
 
 /*
- * Who may change whose role:
+ * Who may manage whose account (role and status):
  * - There is a single admin. No one can grant admin, and the
  *   admin account cannot be changed from the app.
- * - No one changes their own role.
- * - Managers change pending users and editors (to pending,
- *   editor or manager), but not other managers.
- * - The admin changes anyone else.
+ * - No one manages their own account.
+ * - Managers manage editors, but not other managers.
+ * - The admin manages everyone else.
  */
-export function canAssignRole(
-  actor: RoleHolder | null | undefined,
-  target: RoleHolder | null | undefined,
-  newRole: unknown,
+export function canManageUser(
+  actor: AccountHolder | null | undefined,
+  target: AccountHolder | null | undefined,
 ) {
-  if (!actor || !target || !isAssignableRole(newRole)) return false
+  if (!actor || !target) return false
 
   if (target.role === 'admin') return false
 
@@ -54,17 +75,34 @@ export function canAssignRole(
 
   if (hasRole(actor, 'admin')) return true
 
-  if (hasRole(actor, 'manager')) {
-    return target.role === 'pending' || target.role === 'editor'
-  }
+  if (hasRole(actor, 'manager')) return target.role === 'editor'
 
   return false
 }
 
+export function canAssignRole(
+  actor: AccountHolder | null | undefined,
+  target: AccountHolder | null | undefined,
+  newRole: unknown,
+) {
+  return isAssignableRole(newRole) && canManageUser(actor, target)
+}
+
 /*
- * Whether the actor can change this user's role at all, used to
- * decide whether the Users page shows a role picker.
+ * 'invited' is only set by provisioning, never chosen by staff.
  */
-export function canManageUser(actor: RoleHolder | null | undefined, target: RoleHolder) {
-  return assignableRoles.some((role) => canAssignRole(actor, target, role))
+export function canSetAccountStatus(
+  actor: AccountHolder | null | undefined,
+  target: AccountHolder | null | undefined,
+  newStatus: unknown,
+) {
+  return isSettableAccountStatus(newStatus) && canManageUser(actor, target)
+}
+
+/*
+ * Approving an access request: managers and the admin may grant
+ * Editor or Manager. Admin is never granted through approval.
+ */
+export function canGrantOnApproval(actor: AccountHolder | null | undefined, role: unknown) {
+  return hasRole(actor, 'manager') && isAssignableRole(role)
 }

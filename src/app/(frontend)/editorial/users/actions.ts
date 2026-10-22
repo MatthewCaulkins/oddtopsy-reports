@@ -1,105 +1,118 @@
 'use server'
 
-import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
-import { canAssignRole, isAssignableRole } from '@/access/roles'
+import { canAssignRole, canSetAccountStatus, isAssignableRole } from '@/access/roles'
+import {
+  approveAccessRequest,
+  provisionAccess,
+  rejectAccessRequest,
+  resendInvite,
+} from '@/lib/accessRequests'
 import { requireRole } from '@/lib/requireRole'
 
-function getUserID(formData: FormData) {
+function getID(formData: FormData) {
   const id = Number(formData.get('id'))
 
   if (!Number.isInteger(id)) {
-    throw new Error('Invalid user ID.')
+    throw new Error('Invalid ID.')
   }
 
   return id
 }
 
-export async function approveUser(formData: FormData) {
+/*
+ * Access requests
+ */
+
+export async function approveRequest(formData: FormData) {
   const { payload, user } = await requireRole('manager')
 
-  const id = getUserID(formData)
+  const role = formData.get('role')
 
-  const target = await payload.findByID({
-    collection: 'users',
-    id,
-  })
-
-  if (target.role !== 'pending') {
-    throw new Error('Only pending users can be approved.')
+  if (!isAssignableRole(role)) {
+    throw new Error('Choose Editor or Manager.')
   }
 
-  if (!canAssignRole(user, target, 'editor')) {
-    throw new Error('You cannot approve this account.')
-  }
-
-  await payload.update({
-    collection: 'users',
-    id,
-    data: {
-      role: 'editor',
-    },
-  })
+  await approveAccessRequest(payload, user, getID(formData), role)
 
   revalidatePath('/editorial/users')
-  redirect('/editorial/users')
 }
 
-export async function rejectUser(formData: FormData) {
+export async function rejectRequest(formData: FormData) {
+  const { payload, user } = await requireRole('manager')
+
+  const note = String(formData.get('rejectionNote') || '').trim()
+
+  await rejectAccessRequest(payload, user, getID(formData), note)
+
+  revalidatePath('/editorial/users')
+}
+
+export async function retryProvisioning(formData: FormData) {
   const { payload } = await requireRole('manager')
 
-  const id = getUserID(formData)
-
-  const target = await payload.findByID({
-    collection: 'users',
-    id,
-  })
-
-  if (target.role !== 'pending') {
-    throw new Error('Only pending account requests can be rejected.')
-  }
-
-  await payload.delete({
-    collection: 'users',
-    id,
-  })
+  await provisionAccess(payload, getID(formData))
 
   revalidatePath('/editorial/users')
-  redirect('/editorial/users')
 }
+
+/*
+ * Existing accounts. Managers change editors only; the admin changes
+ * anyone but themselves. No one can grant admin.
+ */
 
 export async function updateUserRole(formData: FormData) {
   const { payload, user } = await requireRole('manager')
 
-  const id = getUserID(formData)
+  const id = getID(formData)
+  const role = formData.get('role')
 
-  const requestedRole = formData.get('role')
-
-  if (!isAssignableRole(requestedRole)) {
+  if (!isAssignableRole(role)) {
     throw new Error('Invalid user role.')
   }
 
-  const target = await payload.findByID({
-    collection: 'users',
-    id,
-  })
+  const target = await payload.findByID({ collection: 'users', id })
 
-  /*
-   * Managers can change pending users and editors only; the
-   * admin can change anyone but themselves. No one can grant admin.
-   */
-  if (!canAssignRole(user, target, requestedRole)) {
+  if (!canAssignRole(user, target, role)) {
     throw new Error('You cannot assign that role to this user.')
   }
 
   await payload.update({
     collection: 'users',
     id,
-    data: {
-      role: requestedRole,
-    },
+    data: { role },
   })
+
+  revalidatePath('/editorial/users')
+}
+
+export async function setAccountStatus(formData: FormData) {
+  const { payload, user } = await requireRole('manager')
+
+  const id = getID(formData)
+  const status = formData.get('accountStatus')
+
+  const target = await payload.findByID({ collection: 'users', id })
+
+  if (!canSetAccountStatus(user, target, status)) {
+    throw new Error('You cannot change this account.')
+  }
+
+  // canSetAccountStatus narrows to the settable statuses.
+  await payload.update({
+    collection: 'users',
+    id,
+    data: { accountStatus: status as 'active' | 'disabled' },
+  })
+
+  revalidatePath('/editorial/users')
+}
+
+export async function resendUserInvite(formData: FormData) {
+  const { payload, user } = await requireRole('manager')
+
+  await resendInvite(payload, user, getID(formData))
 
   revalidatePath('/editorial/users')
 }

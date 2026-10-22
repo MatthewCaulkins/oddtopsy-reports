@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
 import { About } from './globals/About'
+import { AccessRequests } from './collections/AccessRequests'
 import { EditorNotes } from './collections/EditorNotes'
 import { FocusAreas } from './collections/FocusAreas'
 import { Media } from './collections/Media'
@@ -83,7 +84,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [EditorNotes, FocusAreas, Media, Submissions, SiteContent, Users],
+  collections: [AccessRequests, EditorNotes, FocusAreas, Media, Submissions, SiteContent, Users],
   editor: richTextEditor,
   email,
   globals: [About],

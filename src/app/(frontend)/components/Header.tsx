@@ -3,6 +3,7 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { NavLinks } from './NavLinks'
 import { LogoutButton } from '@/components/LogoutButton'
+import { hasRole } from '@/access/roles'
 
 function getInitials(email?: string | null) {
   if (!email) return 'U'
@@ -21,10 +22,9 @@ export async function Header() {
   const payload = await getPayload({ config })
   const { user } = await payload.auth({ headers })
 
-  const canUseEditorial =
-    user?.role === 'editor' || user?.role === 'manager' || user?.role === 'admin'
+  const canUseEditorial = hasRole(user, 'editor')
 
-  const isAdmin = user?.role === 'admin'
+  const isAdmin = hasRole(user, 'admin')
 
   return (
     <header className="site-header">
@@ -47,9 +47,15 @@ export async function Header() {
               </div>
             </details>
           ) : (
-            <a href="/login" className="nav-login">
-              Login
-            </a>
+            <>
+              <a href="/login" className="nav-login">
+                Login
+              </a>
+
+              <a href="/request-access" className="nav-login nav-request-access">
+                Request Access
+              </a>
+            </>
           )}
         </nav>
       </div>

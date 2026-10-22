@@ -9,6 +9,7 @@ import { Footer } from '@/app/(frontend)/components/Footer'
 import { EditorialNav } from '../../components/EditorialNav'
 
 import { restoreSubmission, deleteSubmissionPermanently, emptyTrash } from './actions'
+import { hasRole } from '@/access/roles'
 
 export default async function EditorialTrashPage() {
   const headers = await getHeaders()
@@ -20,7 +21,7 @@ export default async function EditorialTrashPage() {
     redirect('/login')
   }
 
-  if (user.role !== 'editor' && user.role !== 'manager' && user.role !== 'admin') {
+  if (!hasRole(user, 'editor')) {
     redirect('/articles')
   }
 
@@ -36,7 +37,7 @@ export default async function EditorialTrashPage() {
     limit: 100,
   })
 
-  const canDeletePermanently = user.role === 'manager' || user.role === 'admin'
+  const canDeletePermanently = hasRole(user, 'manager')
 
   return (
     <main className="site">

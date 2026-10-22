@@ -27,6 +27,7 @@ if (!existing.docs.length) {
       email,
       password,
       role: 'admin',
+      accountStatus: 'active',
       profile: {
         displayName: 'Matt',
       },

@@ -7,6 +7,7 @@ import config from '@/payload.config'
 import { Header } from '@/app/(frontend)/components/Header'
 import { Footer } from '@/app/(frontend)/components/Footer'
 import { EditorialNav } from '@/app/(frontend)/components/EditorialNav'
+import { hasRole } from '@/access/roles'
 
 export default async function EditorialDashboardPage() {
   const headers = await getHeaders()
@@ -20,13 +21,13 @@ export default async function EditorialDashboardPage() {
     redirect('/login')
   }
 
-  const canEdit = user.role === 'editor' || user.role === 'manager' || user.role === 'admin'
+  const canEdit = hasRole(user, 'editor')
 
   if (!canEdit) {
     redirect('/articles')
   }
 
-  const canManageUsers = user.role === 'manager' || user.role === 'admin'
+  const canManageUsers = hasRole(user, 'manager')
 
   const submissions = await payload.find({
     collection: 'submissions',
@@ -53,9 +54,9 @@ export default async function EditorialDashboardPage() {
 
   const pendingUsers = canManageUsers
     ? await payload.find({
-        collection: 'users',
+        collection: 'access-requests',
         where: {
-          role: {
+          status: {
             equals: 'pending',
           },
         },
@@ -139,7 +140,7 @@ export default async function EditorialDashboardPage() {
           <div className="editorial-dashboard-summary">
             {pendingUsers?.totalDocs ? (
               <p>
-                <strong>{pendingUsers.totalDocs}</strong> pending account
+                <strong>{pendingUsers.totalDocs}</strong> pending access
                 {pendingUsers.totalDocs === 1 ? ' request' : ' requests'}
               </p>
             ) : (

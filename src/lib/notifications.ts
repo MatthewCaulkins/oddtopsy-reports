@@ -1,11 +1,11 @@
 import type { Payload } from 'payload'
 
 import type { Role } from '@/access/roles'
-import type { Submission, User } from '@/payload-types'
+import type { AccessRequest, Submission, User } from '@/payload-types'
 
 /*
  * Outgoing notification emails. A failed email is logged but never
- * breaks the signup, review, or revision that triggered it.
+ * breaks the request, review, or revision that triggered it.
  */
 
 export const siteURL =(process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '')
@@ -29,9 +29,7 @@ async function getStaffEmails(payload: Payload, roles: Role[]) {
   const staff = await payload.find({
     collection: 'users',
     where: {
-      role: {
-        in: roles,
-      },
+      and: [{ role: { in: roles } }, { accountStatus: { equals: 'active' } }],
     },
     pagination: false,
     depth: 0,
@@ -54,15 +52,36 @@ async function send(
   }
 }
 
-export async function notifyStaffOfAccountRequest(payload: Payload, user: User) {
-  const name = user.profile?.displayName || user.email
+export async function notifyStaffOfAccessRequest(payload: Payload, request: AccessRequest) {
   const reviewURL = `${siteURL}/editorial/users`
+  const affiliation = request.affiliation ? ` from ${request.affiliation}` : ''
 
-  await send(payload, 'account request', {
+  await send(payload, 'access request', {
     to: await getStaffEmails(payload, ['manager', 'admin']),
-    subject: `New account request: ${name}`,
-    text: `${name} (${user.email}) has requested an editorial account.\n\nReview pending requests: ${reviewURL}`,
-    html: `<p><strong>${escapeHTML(name)}</strong> (${escapeHTML(user.email)}) has requested an editorial account.</p><p><a href="${reviewURL}">Review pending requests</a></p>`,
+    subject: `New access request: ${request.name}`,
+    text: `${request.name} (${request.email})${affiliation} has requested an editorial account.\n\nReview pending requests: ${reviewURL}`,
+    html: `<p><strong>${escapeHTML(request.name)}</strong> (${escapeHTML(request.email)})${escapeHTML(affiliation)} has requested an editorial account.</p><p><a href="${reviewURL}">Review pending requests</a></p>`,
+  })
+}
+
+/*
+ * Unlike the notifications above, this throws on failure so the
+ * caller can record it against the access request and retry.
+ */
+export async function sendAccountInvite(
+  payload: Payload,
+  user: User,
+  setupURL: string,
+  expiresAt: Date,
+) {
+  const name = user.profile?.displayName || user.email
+  const expires = expiresAt.toLocaleDateString('en-US', { dateStyle: 'long' })
+
+  await payload.sendEmail({
+    to: user.email,
+    subject: 'Your Oddtopsy Reports editorial account',
+    text: `Dear ${name},\n\nYour request for an Oddtopsy Reports editorial account has been approved.\n\nSet up your account here (link valid until ${expires}):\n${setupURL}\n\nIf you did not request an account, you can ignore this email.`,
+    html: `<p>Dear ${escapeHTML(name)},</p><p>Your request for an Oddtopsy Reports editorial account has been approved.</p><p><a href="${setupURL}">Set up your account</a> (link valid until ${expires}).</p><p>If you did not request an account, you can ignore this email.</p>`,
   })
 }
 

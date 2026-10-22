@@ -7,6 +7,7 @@ import config from '@/payload.config'
 import { Header } from '@/app/(frontend)/components/Header'
 import { Footer } from '@/app/(frontend)/components/Footer'
 import { EditorialNav } from '@/app/(frontend)/components/EditorialNav'
+import { hasRole } from '@/access/roles'
 
 export default async function EditorialSubmissionsPage() {
   const headers = await getHeaders()
@@ -20,7 +21,7 @@ export default async function EditorialSubmissionsPage() {
     redirect('/login')
   }
 
-  const canEdit = user.role === 'editor' || user.role === 'manager' || user.role === 'admin'
+  const canEdit = hasRole(user, 'editor')
 
   if (!canEdit) {
     redirect('/articles')

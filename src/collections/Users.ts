@@ -1,20 +1,24 @@
 import type { CollectionConfig } from 'payload'
 
-import { canAssignRole, hasRole } from '@/access/roles'
-import { notifyStaffOfAccountRequest } from '@/lib/notifications'
+import { canAssignRole, canSetAccountStatus, hasRole } from '@/access/roles'
 
+/*
+ * Users are approved editorial staff only. People ask for access
+ * through AccessRequests; approving one creates the User.
+ */
 export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
     useAsTitle: 'email',
-    // Only admins should be able to use Payload Admin.
+    defaultColumns: ['email', 'role', 'accountStatus'],
+    // Only admins should be able to use Payload Admin (enforced by access.admin below).
     hidden: ({ user }) => user?.role !== 'admin',
   },
   auth: true,
   /*
    * These rules govern the REST/GraphQL API and Payload Admin.
-   * Signup and the Editorial Users page use the Local API on the
-   * server and enforce canAssignRole themselves. Staff can see
+   * Approvals and the Editorial Users page use the Local API on the
+   * server and enforce the role rules themselves. Staff can see
    * each other so shared work shows who did what.
    */
   access: {
@@ -38,8 +42,26 @@ export const Users: CollectionConfig = {
   hooks: {
     beforeLogin: [
       ({ user }) => {
-        if (user.role === 'pending') {
-          throw new Error('Your account is awaiting approval.')
+        if (user.accountStatus === 'disabled') {
+          throw new Error('This account is disabled.')
+        }
+
+        return user
+      },
+    ],
+    afterLogin: [
+      // Setting a password from the invite (or signing in) activates an invited account.
+      async ({ user, req }) => {
+        if (user.accountStatus === 'invited') {
+          await req.payload.db.updateOne({
+            collection: 'users',
+            id: user.id,
+            data: { accountStatus: 'active' },
+            req,
+            returning: false,
+          })
+
+          user.accountStatus = 'active'
         }
 
         return user
@@ -47,12 +69,12 @@ export const Users: CollectionConfig = {
     ],
     afterChange: [
       async ({ doc, previousDoc, operation, req }) => {
-        if (operation === 'create' && doc.role === 'pending') {
-          await notifyStaffOfAccountRequest(req.payload, doc)
-        }
-
-        // Disabling an account (back to pending) signs the user out everywhere.
-        if (operation === 'update' && doc.role === 'pending' && previousDoc?.role !== 'pending') {
+        // Disabling an account signs the user out everywhere.
+        if (
+          operation === 'update' &&
+          doc.accountStatus === 'disabled' &&
+          previousDoc?.accountStatus !== 'disabled'
+        ) {
           await req.payload.db.updateOne({
             collection: 'users',
             id: doc.id,
@@ -71,7 +93,7 @@ export const Users: CollectionConfig = {
       name: 'role',
       type: 'select',
       required: true,
-      defaultValue: 'pending',
+      defaultValue: 'editor',
       saveToJWT: true,
 
       // Users may edit their own profile, but never their own role.
@@ -81,10 +103,6 @@ export const Users: CollectionConfig = {
       },
 
       options: [
-        {
-          label: 'Pending',
-          value: 'pending',
-        },
         {
           label: 'Editor',
           value: 'editor',
@@ -98,6 +116,30 @@ export const Users: CollectionConfig = {
           value: 'admin',
         },
       ],
+    },
+    {
+      name: 'accountStatus',
+      type: 'select',
+      required: true,
+      defaultValue: 'invited',
+      index: true,
+
+      // 'invited' is set by provisioning; staff only switch between active and disabled.
+      access: {
+        create: ({ req }) => hasRole(req.user, 'admin'),
+        update: ({ req, doc, data }) => canSetAccountStatus(req.user, doc, data?.accountStatus),
+      },
+
+      options: [
+        { label: 'Invited', value: 'invited' },
+        { label: 'Active', value: 'active' },
+        { label: 'Disabled', value: 'disabled' },
+      ],
+      admin: {
+        position: 'sidebar',
+        description:
+          'Invited until the first sign-in. Only active accounts have editorial access.',
+      },
     },
     // Email added by default
     // Add more fields as needed

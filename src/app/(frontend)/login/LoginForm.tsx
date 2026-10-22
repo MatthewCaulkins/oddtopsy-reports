@@ -52,8 +52,8 @@ export function LoginForm() {
         <a className="button secondary" href="/forgot-password">
           Forgot Password
         </a>
-        <a className="button secondary" href="/signup">
-          Signup
+        <a className="button secondary" href="/request-access">
+          Request Access
         </a>
       </div>
     </form>

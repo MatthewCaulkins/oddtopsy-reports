@@ -367,6 +367,30 @@ section:only-of-type {
   text-shadow: none;
 }
 
+/* Sits right of Login; Login's auto margin already pushes both right. */
+.nav-login.nav-request-access {
+  margin-left: 0;
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+  color: var(--color-accent);
+  text-shadow: var(--text-shadow-white);
+}
+
+.nav-login.nav-request-access:hover {
+  background: var(--color-accent);
+  color: #fff;
+  text-shadow: none;
+}
+
+/* Bot trap on public forms: kept off-screen rather than display:none so naive bots still fill it. */
+.form-honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .user-menu {
   margin-left: auto;
 }

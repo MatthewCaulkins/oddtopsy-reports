@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
+import { hasRole } from '@/access/roles'
 
 async function requireEditor() {
   const headers = await getHeaders()
@@ -19,7 +20,7 @@ async function requireEditor() {
     redirect('/login')
   }
 
-  if (user.role !== 'editor' && user.role !== 'manager' && user.role !== 'admin') {
+  if (!hasRole(user, 'editor')) {
     redirect('/articles')
   }
 
@@ -32,7 +33,7 @@ async function requireEditor() {
 async function requireManager() {
   const result = await requireEditor()
 
-  if (result.user.role !== 'manager' && result.user.role !== 'admin') {
+  if (!hasRole(result.user, 'manager')) {
     throw new Error('Manager access is required.')
   }
 

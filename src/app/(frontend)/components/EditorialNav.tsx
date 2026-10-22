@@ -1,4 +1,5 @@
 import type { User } from '@/payload-types'
+import { hasRole } from '@/access/roles'
 
 type Props = {
   user: User
@@ -6,7 +7,7 @@ type Props = {
 }
 
 export function EditorialNav({ user, active }: Props) {
-  const canManageUsers = user.role === 'manager' || user.role === 'admin'
+  const canManageUsers = hasRole(user, 'manager')
 
   return (
     <nav className="editorial-nav" aria-label="Editorial navigation">

@@ -5,11 +5,14 @@ import { ResetPasswordForm } from './ResetPasswordForm'
 type Props = {
   searchParams: Promise<{
     token?: string
+    invite?: string
   }>
 }
 
+// Also serves approved staff's account-setup invite (?invite=1), which uses the same token flow.
 export default async function ResetPasswordPage({ searchParams }: Props) {
-  const { token } = await searchParams
+  const { token, invite } = await searchParams
+  const isInvite = invite === '1'
 
   return (
     <main className="site">
@@ -17,9 +20,13 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
 
       <section className="page-hero">
         <div className="page-hero-content">
-          <h1>Reset Password</h1>
+          <h1>{isInvite ? 'Set Up Your Account' : 'Reset Password'}</h1>
 
-          <p>Choose a new password for your Oddtopsy Reports account.</p>
+          <p>
+            {isInvite
+              ? 'Your editorial access was approved. Choose a password to finish setting up your Oddtopsy Reports account.'
+              : 'Choose a new password for your Oddtopsy Reports account.'}
+          </p>
         </div>
 
         <div className="content-panel">
