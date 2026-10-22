@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
+import { hasRole } from '@/access/roles'
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -19,9 +21,9 @@ export const FocusAreas: CollectionConfig = {
 
   access: {
     read: () => true,
-    create: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    create: ({ req }) => hasRole(req.user, 'manager'),
+    update: ({ req }) => hasRole(req.user, 'manager'),
+    delete: ({ req }) => hasRole(req.user, 'manager'),
   },
 
   fields: [

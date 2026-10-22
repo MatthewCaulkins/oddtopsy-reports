@@ -9,13 +9,14 @@ import {
 } from '@payloadcms/richtext-lexical'
 
 import { richTextEditor } from '@/editor/richTextEditor'
+import { hasRole } from '@/access/roles'
 
 export const About: GlobalConfig = {
   slug: 'about',
 
   access: {
     read: () => true,
-    update: ({ req }) => Boolean(req.user),
+    update: ({ req }) => hasRole(req.user, 'admin'),
   },
 
   fields: [

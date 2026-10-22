@@ -1,8 +1,6 @@
-import { headers as getHeaders } from 'next/headers'
-import { redirect, notFound } from 'next/navigation'
-import { getPayload } from 'payload'
+import { notFound } from 'next/navigation'
+import { requireRole } from '@/lib/requireRole'
 
-import config from '@/payload.config'
 import { Header } from '@/app/(frontend)/components/Header'
 import { Footer } from '@/app/(frontend)/components/Footer'
 import { EditorialToolbar } from '@/app/(frontend)/components/EditorialToolbar'
@@ -69,13 +67,7 @@ export default async function EditorialPage({ params, searchParams }: Props) {
   const mode = rawMode === 'edit' ? 'edit' : 'preview'
   const configForPage = pageConfig[rawPage]
 
-  const headers = await getHeaders()
-  const payload = await getPayload({ config })
-  const { user } = await payload.auth({ headers })
-
-  if (!user) {
-    redirect('/login')
-  }
+  const { payload, user } = await requireRole('editor')
 
   const result = await payload.find({
     collection: 'site-content',

@@ -136,7 +136,7 @@ export interface UserAuthOperations {
 export interface EditorNote {
   id: number;
   submission: number | Submission;
-  createdBy: number | User;
+  createdBy?: (number | null) | User;
   noteType: 'internal' | 'revision_request' | 'publication_note';
   note: string;
   updatedAt: string;
@@ -223,6 +223,10 @@ export interface Submission {
     | 'accepted'
     | 'rejected'
     | 'published';
+  revisionAccess?: {
+    tokenHash?: string | null;
+    expiresAt?: string | null;
+  };
   trashed?: boolean | null;
   trashedAt?: string | null;
   trashedBy?: (number | null) | User;
@@ -256,6 +260,10 @@ export interface FocusArea {
 export interface Media {
   id: number;
   alt: string;
+  /**
+   * Set automatically: public while a published paper or site page uses this file, otherwise staff only.
+   */
+  audience?: ('staff' | 'public') | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -475,6 +483,7 @@ export interface FocusAreasSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  audience?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -577,6 +586,12 @@ export interface SubmissionsSelect<T extends boolean = true> {
       };
   authorMessage?: T;
   workflowStatus?: T;
+  revisionAccess?:
+    | T
+    | {
+        tokenHash?: T;
+        expiresAt?: T;
+      };
   trashed?: T;
   trashedAt?: T;
   trashedBy?: T;

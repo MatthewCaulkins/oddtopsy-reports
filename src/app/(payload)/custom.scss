@@ -40,7 +40,8 @@
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
     z-index: 1000;
 
-    a {
+    a,
+    .admin-user-menu__logout {
       padding: 10px 12px;
       border-radius: 10px;
       color: #fff;
@@ -49,6 +50,14 @@
       &:hover {
         background: rgba(255, 255, 255, 0.08);
       }
+    }
+
+    .admin-user-menu__logout {
+      border: 0;
+      background: none;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
     }
   }
 }

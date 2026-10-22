@@ -2,8 +2,17 @@
 
 import { useFormStatus } from 'react-dom'
 
+import { unpublishStatuses, workflowStatusLabels, type WorkflowStatus } from '@/lib/workflow'
+
 type EditorialToolbarProps = {
   mode: 'preview' | 'edit'
+
+  status?: WorkflowStatus
+  submissionId?: string | number
+  authorEmail?: string
+
+  revisionAction?: (formData: FormData) => void | Promise<void>
+  unpublishAction?: (formData: FormData) => void | Promise<void>
 
   previewHref: string
   editHref: string
@@ -54,6 +63,26 @@ function RestoreButton() {
   )
 }
 
+function RevisionButton() {
+  const { pending } = useFormStatus()
+
+  return (
+    <button className="button primary" type="submit" disabled={pending}>
+      {pending ? 'Sending…' : 'Send to Author'}
+    </button>
+  )
+}
+
+function UnpublishButton() {
+  const { pending } = useFormStatus()
+
+  return (
+    <button className="button secondary" type="submit" disabled={pending}>
+      {pending ? 'Unpublishing…' : 'Unpublish'}
+    </button>
+  )
+}
+
 function DeleteButton() {
   const { pending } = useFormStatus()
 
@@ -66,6 +95,14 @@ function DeleteButton() {
 
 export function EditorialToolbar({
   mode,
+
+  status,
+  submissionId,
+  authorEmail,
+
+  revisionAction,
+  unpublishAction,
+
   previewHref,
   editHref,
   publishedHref,
@@ -86,6 +123,8 @@ export function EditorialToolbar({
 
   const hasTrashID = trashId !== undefined && trashId !== null
 
+  const hasSubmissionID = submissionId !== undefined && submissionId !== null
+
   return (
     <section className="editorial-toolbar">
       <div className="editorial-toolbar-tabs">
@@ -99,6 +138,8 @@ export function EditorialToolbar({
         <a className={`button secondary ${mode === 'edit' ? 'is-active' : ''}`} href={editHref}>
           Edit
         </a>
+
+        {status && <span className="editorial-status">{workflowStatusLabels[status]}</span>}
       </div>
 
       <div className="editorial-toolbar-actions">
@@ -127,6 +168,50 @@ export function EditorialToolbar({
                 <input type="hidden" name="id" value={trashId} />
 
                 <TrashButton />
+              </form>
+            )}
+
+            {revisionAction && hasSubmissionID && (
+              <details className="editorial-toolbar-panel">
+                <summary className="button secondary">Request Revisions</summary>
+
+                <form action={revisionAction} className="editorial-toolbar-panel-body">
+                  <input type="hidden" name="id" value={submissionId} />
+
+                  <label>
+                    Message to {authorEmail || 'the corresponding author'}
+                    <textarea name="message" rows={6} required />
+                  </label>
+
+                  <p className="editorial-toolbar-hint">
+                    The author receives this message and a private link to revise their submission.
+                    {status === 'published' && ' This takes the paper offline.'}
+                  </p>
+
+                  <RevisionButton />
+                </form>
+              </details>
+            )}
+
+            {status === 'published' && unpublishAction && hasSubmissionID && (
+              <form action={unpublishAction} className="editorial-toolbar-unpublish">
+                <input type="hidden" name="id" value={submissionId} />
+
+                <div className="select-wrap">
+                  <select
+                    name="status"
+                    defaultValue="in_progress"
+                    aria-label="Status after unpublishing"
+                  >
+                    {unpublishStatuses.map((option) => (
+                      <option key={option} value={option}>
+                        {workflowStatusLabels[option]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <UnpublishButton />
               </form>
             )}
 

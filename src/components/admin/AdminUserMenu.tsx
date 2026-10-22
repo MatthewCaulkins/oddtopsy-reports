@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { headers as getHeaders } from 'next/headers'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
+import { LogoutButton } from '@/components/LogoutButton'
 
 function getInitials(email?: string | null) {
   if (!email) return 'U'
@@ -33,7 +34,7 @@ export default async function AdminUserMenu() {
 
         <Link href="/admin/account">Account</Link>
 
-        <Link href="/logout">Logout</Link>
+        <LogoutButton className="admin-user-menu__logout" />
       </div>
     </details>
   )

@@ -1,10 +1,8 @@
 'use server'
 
-import { headers as getHeaders } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getPayload } from 'payload'
 
-import config from '@/payload.config'
+import { requireRole } from '@/lib/requireRole'
 
 const allowedPages = ['papers', 'submit', 'about', 'subscribe'] as const
 
@@ -82,13 +80,7 @@ export async function updateSiteContent(formData: FormData) {
     throw new Error('Invalid site content page.')
   }
 
-  const headers = await getHeaders()
-  const payload = await getPayload({ config })
-  const { user } = await payload.auth({ headers })
-
-  if (!user) {
-    redirect('/login')
-  }
+  const { payload } = await requireRole('editor')
 
   const editorialBoard =
     page === 'about' ? parseEditorialBoard(formData.get('editorialBoard')) : undefined
@@ -126,13 +118,7 @@ export async function restoreSiteContentVersion(formData: FormData) {
     throw new Error('Invalid site content page.')
   }
 
-  const headers = await getHeaders()
-  const payload = await getPayload({ config })
-  const { user } = await payload.auth({ headers })
-
-  if (!user) {
-    redirect('/login')
-  }
+  const { payload } = await requireRole('editor')
 
   const version = await payload.findVersionByID({
     collection: 'site-content',

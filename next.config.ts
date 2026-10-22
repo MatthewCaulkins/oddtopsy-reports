@@ -4,7 +4,8 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
-      bodySizeLimit: '25mb',
+      // Submissions can carry a manuscript PDF plus a dozen or more figures.
+      bodySizeLimit: '100mb',
     },
   },
 

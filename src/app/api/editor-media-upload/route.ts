@@ -2,10 +2,20 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
+import { hasRole } from '@/access/roles'
+import { signedCookieOptions } from '@/lib/signedCookies'
+import { createUploadGrantValue, uploadGrantCookie, uploadGrantMaxAge } from '@/lib/uploadGrants'
 
+/*
+ * Editors and anonymous authors (the public Submit form and
+ * revision links) can both upload. Every upload starts staff-only
+ * and becomes public when a published paper or page uses it.
+ */
 export async function POST(request: Request) {
   try {
     const payload = await getPayload({ config })
+    const { user } = await payload.auth({ headers: request.headers })
+    const isEditor = hasRole(user, 'editor')
     const formData = await request.formData()
     const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 
@@ -73,6 +83,7 @@ export async function POST(request: Request) {
           name: file.name,
           size: file.size,
         },
+        // Access was checked above; anonymous authors have no Payload user.
         overrideAccess: true,
       })
 
@@ -98,12 +109,26 @@ export async function POST(request: Request) {
       )
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       error: 0,
       message: '',
       files: uploadedMedia,
     })
+
+    // Let an anonymous author keep seeing their own private uploads in the editor.
+    if (!isEditor) {
+      response.cookies.set(
+        uploadGrantCookie,
+        createUploadGrantValue(
+          request.headers,
+          uploadedMedia.map((media) => Number(media.id)),
+        ),
+        { ...signedCookieOptions, maxAge: uploadGrantMaxAge },
+      )
+    }
+
+    return response
   } catch (error) {
     console.error('Jodit media upload failed:', error)
 

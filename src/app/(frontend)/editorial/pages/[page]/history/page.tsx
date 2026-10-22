@@ -1,8 +1,6 @@
-import { headers as getHeaders } from 'next/headers'
-import { notFound, redirect } from 'next/navigation'
-import { getPayload } from 'payload'
+import { notFound } from 'next/navigation'
+import { requireRole } from '@/lib/requireRole'
 
-import config from '@/payload.config'
 import { Header } from '@/app/(frontend)/components/Header'
 import { Footer } from '@/app/(frontend)/components/Footer'
 import { SiteContentVersionHistoryExplorer } from '@/app/(frontend)/components/site-content/SiteContentVersionHistoryExplorer'
@@ -56,13 +54,7 @@ export default async function SiteContentHistoryPage({ params, searchParams }: P
     notFound()
   }
 
-  const headers = await getHeaders()
-  const payload = await getPayload({ config })
-  const { user } = await payload.auth({ headers })
-
-  if (!user) {
-    redirect('/login')
-  }
+  const { payload, user } = await requireRole('editor')
 
   const result = await payload.find({
     collection: 'site-content',

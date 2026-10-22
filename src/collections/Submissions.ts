@@ -1,5 +1,15 @@
 import type { CollectionConfig } from 'payload'
 
+import { hasRole } from '@/access/roles'
+import { getReadablePaperWhere } from '@/access/visibility'
+import type { Submission } from '@/payload-types'
+import {
+  getSubmissionMedia,
+  mergeMediaReferences,
+  syncMediaAudience,
+} from '@/lib/mediaVisibility'
+import { clearedRevisionAccess } from '@/lib/revisionAccess'
+
 type SubmissionSiblingData = {
   submissionType?: 'upload' | 'editor'
 }
@@ -17,19 +27,69 @@ export const Submissions: CollectionConfig = {
     defaultColumns: ['title', 'submissionType', 'workflowStatus', 'createdAt'],
   },
 
+  /*
+   * Submissions are shared work: every editor, manager and the admin
+   * can edit any paper. Visitors only read published papers. Public
+   * submissions and author revisions come in through server actions,
+   * which check their own access, so the API never accepts them.
+   */
   access: {
-    create: () => true,
+    create: ({ req }) => hasRole(req.user, 'editor'),
     read: ({ req }) => {
-      if (req.user) return true
+      if (hasRole(req.user, 'editor')) return true
 
-      return {
-        workflowStatus: {
-          equals: 'published',
-        },
-      }
+      return getReadablePaperWhere(req.user)
     },
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    readVersions: ({ req }) => hasRole(req.user, 'editor'),
+    update: ({ req }) => hasRole(req.user, 'editor'),
+    delete: ({ req }) => hasRole(req.user, 'manager'),
+  },
+
+  hooks: {
+    beforeChange: [
+      ({ data, originalDoc }) => {
+        // Any move out of Revision Requested ends the author's revision link.
+        if (
+          originalDoc?.workflowStatus === 'revision_requested' &&
+          data.workflowStatus &&
+          data.workflowStatus !== 'revision_requested'
+        ) {
+          return { ...data, revisionAccess: clearedRevisionAccess }
+        }
+
+        return data
+      },
+    ],
+    afterChange: [
+      async ({ doc, previousDoc, req }) => {
+        await syncMediaAudience(
+          req.payload,
+          mergeMediaReferences(
+            getSubmissionMedia(doc as Submission),
+            getSubmissionMedia(previousDoc as Submission | undefined),
+          ),
+          req,
+        )
+
+        return doc
+      },
+    ],
+    beforeDelete: [
+      // A note belongs to its paper; remove them first or the delete is blocked.
+      async ({ id, req }) => {
+        await req.payload.delete({
+          collection: 'editor-notes',
+          where: { submission: { equals: id } },
+          overrideAccess: true,
+          req,
+        })
+      },
+    ],
+    afterDelete: [
+      async ({ doc, req }) => {
+        await syncMediaAudience(req.payload, getSubmissionMedia(doc as Submission), req)
+      },
+    ],
   },
 
   fields: [
@@ -259,9 +319,33 @@ export const Submissions: CollectionConfig = {
         { label: 'Published', value: 'published' },
       ],
       access: {
-        create: ({ req }) => Boolean(req.user),
-        update: ({ req }) => Boolean(req.user),
+        create: ({ req }) => hasRole(req.user, 'editor'),
+        update: ({ req }) => hasRole(req.user, 'editor'),
       },
+    },
+    {
+      // The author's emailed revision link. Never exposed through the API.
+      name: 'revisionAccess',
+      type: 'group',
+      access: {
+        read: () => false,
+        create: () => false,
+        update: () => false,
+      },
+      admin: {
+        hidden: true,
+      },
+      fields: [
+        {
+          name: 'tokenHash',
+          type: 'text',
+          index: true,
+        },
+        {
+          name: 'expiresAt',
+          type: 'date',
+        },
+      ],
     },
     {
       name: 'trashed',

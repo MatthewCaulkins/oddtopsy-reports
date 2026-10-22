@@ -5,6 +5,7 @@ import { getPayload } from 'payload'
 import { headers as getHeaders } from 'next/headers'
 
 import config from '@/payload.config'
+import { hasRole } from '@/access/roles'
 
 export async function GET() {
   const headers = await getHeaders()
@@ -14,7 +15,8 @@ export async function GET() {
     headers,
   })
 
-  if (!user) {
+  // The library lists every file, including unpublished ones.
+  if (!hasRole(user, 'editor')) {
     return NextResponse.json(
       {
         success: false,

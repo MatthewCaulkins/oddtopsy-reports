@@ -8,7 +8,16 @@ import { Header } from '@/app/(frontend)/components/Header'
 import { Footer } from '@/app/(frontend)/components/Footer'
 import { EditorialNav } from '../../components/EditorialNav'
 
-import { approveUser, rejectUser, updateUserRole, promoteToAdmin } from './actions'
+import { canManageUser, hasRole, type Role } from '@/access/roles'
+
+import { approveUser, rejectUser, updateUserRole } from './actions'
+
+const roleLabels: Record<Role, string> = {
+  pending: 'Pending',
+  editor: 'Editor',
+  manager: 'Manager',
+  admin: 'Admin',
+}
 
 export default async function EditorialUsersPage() {
   const headers = await getHeaders()
@@ -20,7 +29,7 @@ export default async function EditorialUsersPage() {
     redirect('/login')
   }
 
-  if (user.role !== 'manager' && user.role !== 'admin') {
+  if (!hasRole(user, 'manager')) {
     redirect('/articles')
   }
 
@@ -95,7 +104,7 @@ export default async function EditorialUsersPage() {
 
         <div className="editorial-user-list">
           {activeUsers.map((item) => {
-            const isCurrentUser = Number(item.id) === Number(user.id)
+            const canManage = canManageUser(user, item)
 
             return (
               <article key={item.id} className="editorial-user-row">
@@ -106,45 +115,25 @@ export default async function EditorialUsersPage() {
                 </div>
 
                 <div className="editorial-user-actions">
-                  {item.role === 'admin' ? (
-                    <span className="editorial-role-badge">Admin</span>
+                  {canManage ? (
+                    <form key={`${item.id}-${item.role}`} action={updateUserRole}>
+                      <input type="hidden" name="id" value={item.id} />
+
+                      <div className="select-wrap">
+                        <select name="role" defaultValue={item.role}>
+                          <option value="editor">Editor</option>
+
+                          <option value="manager">Manager</option>
+
+                          <option value="pending">Pending / Disable Login</option>
+                        </select>
+                      </div>
+                      <button className="button secondary" type="submit">
+                        Update Role
+                      </button>
+                    </form>
                   ) : (
-                    <>
-                      <form key={`${item.id}-${item.role}`} action={updateUserRole}>
-                        <input type="hidden" name="id" value={item.id} />
-
-                        <div className="select-wrap">
-                          <select
-                            name="role"
-                            defaultValue={item.role}
-                            disabled={isCurrentUser && user.role === 'manager'}
-                          >
-                            <option value="editor">Editor</option>
-
-                            <option value="manager">Manager</option>
-
-                            <option value="pending">Pending / Disable Login</option>
-                          </select>
-                        </div>
-                        <button
-                          className="button secondary"
-                          type="submit"
-                          disabled={isCurrentUser && user.role === 'manager'}
-                        >
-                          Update Role
-                        </button>
-                      </form>
-
-                      {user.role === 'admin' && (
-                        <form action={promoteToAdmin}>
-                          <input type="hidden" name="id" value={item.id} />
-
-                          <button className="button secondary" type="submit">
-                            Make Admin
-                          </button>
-                        </form>
-                      )}
-                    </>
+                    <span className="editorial-role-badge">{roleLabels[item.role]}</span>
                   )}
                 </div>
               </article>

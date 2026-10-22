@@ -1,35 +1,10 @@
 'use server'
 
-import { headers as getHeaders } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { getPayload } from 'payload'
 
-import config from '@/payload.config'
-
-type ManageableRole = 'pending' | 'editor' | 'manager'
-
-async function requireUserManager() {
-  const headers = await getHeaders()
-  const payload = await getPayload({ config })
-
-  const { user } = await payload.auth({
-    headers,
-  })
-
-  if (!user) {
-    redirect('/login')
-  }
-
-  if (user.role !== 'manager' && user.role !== 'admin') {
-    redirect('/editorial')
-  }
-
-  return {
-    payload,
-    user,
-  }
-}
+import { canAssignRole, isAssignableRole } from '@/access/roles'
+import { requireRole } from '@/lib/requireRole'
 
 function getUserID(formData: FormData) {
   const id = Number(formData.get('id'))
@@ -42,7 +17,7 @@ function getUserID(formData: FormData) {
 }
 
 export async function approveUser(formData: FormData) {
-  const { payload } = await requireUserManager()
+  const { payload, user } = await requireRole('manager')
 
   const id = getUserID(formData)
 
@@ -53,6 +28,10 @@ export async function approveUser(formData: FormData) {
 
   if (target.role !== 'pending') {
     throw new Error('Only pending users can be approved.')
+  }
+
+  if (!canAssignRole(user, target, 'editor')) {
+    throw new Error('You cannot approve this account.')
   }
 
   await payload.update({
@@ -68,7 +47,7 @@ export async function approveUser(formData: FormData) {
 }
 
 export async function rejectUser(formData: FormData) {
-  const { payload } = await requireUserManager()
+  const { payload } = await requireRole('manager')
 
   const id = getUserID(formData)
 
@@ -91,15 +70,13 @@ export async function rejectUser(formData: FormData) {
 }
 
 export async function updateUserRole(formData: FormData) {
-  const { payload, user } = await requireUserManager()
+  const { payload, user } = await requireRole('manager')
 
   const id = getUserID(formData)
 
-  const requestedRole = String(formData.get('role') || '')
+  const requestedRole = formData.get('role')
 
-  const allowedRoles: ManageableRole[] = ['pending', 'editor', 'manager']
-
-  if (!allowedRoles.includes(requestedRole as ManageableRole)) {
+  if (!isAssignableRole(requestedRole)) {
     throw new Error('Invalid user role.')
   }
 
@@ -109,58 +86,20 @@ export async function updateUserRole(formData: FormData) {
   })
 
   /*
-   * Managers cannot change an admin account.
+   * Managers can change pending users and editors only; the
+   * admin can change anyone but themselves. No one can grant admin.
    */
-  if (target.role === 'admin' && user.role !== 'admin') {
-    throw new Error('Only an administrator can modify an administrator account.')
-  }
-
-  /*
-   * Prevent managers from changing themselves
-   * accidentally.
-   */
-  if (Number(target.id) === Number(user.id) && user.role === 'manager') {
-    throw new Error('Managers cannot change their own role.')
+  if (!canAssignRole(user, target, requestedRole)) {
+    throw new Error('You cannot assign that role to this user.')
   }
 
   await payload.update({
     collection: 'users',
     id,
     data: {
-      role: requestedRole as ManageableRole,
+      role: requestedRole,
     },
   })
 
   revalidatePath('/editorial/users')
-  //   redirect('/editorial/users')
-}
-
-export async function promoteToAdmin(formData: FormData) {
-  const headers = await getHeaders()
-  const payload = await getPayload({ config })
-
-  const { user } = await payload.auth({
-    headers,
-  })
-
-  if (!user) {
-    redirect('/login')
-  }
-
-  if (user.role !== 'admin') {
-    throw new Error('Only an administrator can create another administrator.')
-  }
-
-  const id = getUserID(formData)
-
-  await payload.update({
-    collection: 'users',
-    id,
-    data: {
-      role: 'admin',
-    },
-  })
-
-  revalidatePath('/editorial/users')
-  redirect('/editorial/users')
 }

@@ -2,6 +2,7 @@ import { headers as getHeaders } from 'next/headers'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { NavLinks } from './NavLinks'
+import { LogoutButton } from '@/components/LogoutButton'
 
 function getInitials(email?: string | null) {
   if (!email) return 'U'
@@ -42,7 +43,7 @@ export async function Header() {
 
                 {isAdmin && <a href="/admin">Admin Panel</a>}
 
-                <a href="/logout">Logout</a>
+                <LogoutButton className="user-menu-logout" />
               </div>
             </details>
           ) : (

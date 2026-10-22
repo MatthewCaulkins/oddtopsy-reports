@@ -1,8 +1,6 @@
-import { headers as getHeaders } from 'next/headers'
-import { notFound, redirect } from 'next/navigation'
-import { getPayload } from 'payload'
+import { notFound } from 'next/navigation'
+import { requireRole } from '@/lib/requireRole'
 
-import config from '@/payload.config'
 import { Header } from '@/app/(frontend)/components/Header'
 import { Footer } from '@/app/(frontend)/components/Footer'
 import { VersionHistoryExplorer } from '@/app/(frontend)/components/version-history/VersionHistoryExplorer'
@@ -27,13 +25,7 @@ export default async function SubmissionHistoryPage({ params, searchParams }: Pr
     notFound()
   }
 
-  const headers = await getHeaders()
-  const payload = await getPayload({ config })
-  const { user } = await payload.auth({ headers })
-
-  if (!user) {
-    redirect('/login')
-  }
+  const { payload, user } = await requireRole('editor')
 
   const submission = await payload.findByID({
     collection: 'submissions',

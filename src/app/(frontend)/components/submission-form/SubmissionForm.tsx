@@ -20,9 +20,9 @@ type FormError = {
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024
 const MAX_PDF_SIZE = 20 * 1024 * 1024
 
-// Leave some room below Next's 25 MB request limit
+// Leave some room below the 100 MB server action limit (next.config.ts)
 // for multipart/form-data overhead and ordinary fields.
-const MAX_TOTAL_UPLOAD_SIZE = 23 * 1024 * 1024
+const MAX_TOTAL_UPLOAD_SIZE = 95 * 1024 * 1024
 
 function SubmissionButton({ label }: { label: string }) {
   const { pending } = useFormStatus()
@@ -287,7 +287,7 @@ export function SubmissionForm({
     if (totalUploadSize > MAX_TOTAL_UPLOAD_SIZE) {
       nextErrors.push({
         name: 'uploadSize',
-        label: 'The combined size of new uploads must be 23 MB or smaller.',
+        label: 'The combined size of new uploads must be 95 MB or smaller.',
       })
     }
 
