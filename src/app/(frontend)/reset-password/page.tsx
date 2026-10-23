@@ -2,6 +2,9 @@ import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { ResetPasswordForm } from './ResetPasswordForm'
 
+import { redirect } from 'next/navigation'
+import { getAuthConfig } from '@/lib/auth/config'
+
 type Props = {
   searchParams: Promise<{
     token?: string
@@ -11,6 +14,9 @@ type Props = {
 
 // Also serves approved staff's account-setup invite (?invite=1), which uses the same token flow.
 export default async function ResetPasswordPage({ searchParams }: Props) {
+  // Passwords are managed by Cognito when password sign-in is off.
+  if (!getAuthConfig().password) redirect('/login')
+
   const { token, invite } = await searchParams
   const isInvite = invite === '1'
 

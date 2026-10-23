@@ -66,15 +66,20 @@ if ($LASTEXITCODE -ne 0) {
 $Registry = "$AccountId.dkr.ecr.$Region.amazonaws.com"
 $Image = "$Registry/$Repository`:$Tag"
 
-# Never overwrite an existing tag.
-aws ecr describe-images `
+# Never overwrite an existing tag. Only "image not found" means the tag is free;
+# any other error (e.g. access denied) aborts rather than risking an overwrite.
+$DescribeOutput = aws ecr describe-images `
     --profile $AwsProfile `
     --region $Region `
     --repository-name $Repository `
-    --image-ids imageTag=$Tag 2>$null | Out-Null
+    --image-ids imageTag=$Tag 2>&1 | Out-String
 
 if ($LASTEXITCODE -eq 0) {
     throw "Tag '$Tag' already exists in $Repository. Choose another -Name or -Tag."
+}
+
+if ($DescribeOutput -notmatch "ImageNotFoundException") {
+    throw "Could not check whether tag '$Tag' exists: $DescribeOutput"
 }
 
 Write-Host ""
@@ -92,8 +97,12 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host ""
 Write-Host "Building $Image from commit $Commit..."
 
+# No provenance/SBOM attestations: with them Docker pushes an OCI image index,
+# whose digest ECS Fargate failed to pull. A plain linux/amd64 manifest pulls reliably.
 docker build `
     --platform linux/amd64 `
+    --provenance=false `
+    --sbom=false `
     --label "org.opencontainers.image.revision=$Commit" `
     -t $Image `
     .

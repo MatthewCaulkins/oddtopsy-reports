@@ -13,13 +13,27 @@ export function LogoutButton({ className }: { className?: string }) {
   async function logout() {
     setPending(true)
 
+    let next = '/'
+
     try {
+      // Ends a password session, if any.
       await fetch('/api/users/logout', {
         method: 'POST',
         credentials: 'include',
+      }).catch(() => undefined)
+
+      // Ends a Cognito session, if any, and returns where to go next.
+      const response = await fetch('/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
       })
+
+      if (response.ok) {
+        const data = (await response.json()) as { redirect?: string }
+        next = data.redirect || '/'
+      }
     } finally {
-      window.location.href = '/'
+      window.location.href = next
     }
   }
 

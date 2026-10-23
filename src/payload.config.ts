@@ -78,6 +78,10 @@ export default buildConfig({
   admin: {
     components: {
       actions: ['@/components/admin/AdminUserMenu'],
+      afterLogin: ['@/components/admin/CognitoAdminLogin'],
+      logout: {
+        Button: '@/components/admin/AdminLogoutButton',
+      },
     },
     user: Users.slug,
     importMap: {

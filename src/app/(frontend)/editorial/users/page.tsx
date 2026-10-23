@@ -2,7 +2,7 @@ import { Header } from '@/app/(frontend)/components/Header'
 import { Footer } from '@/app/(frontend)/components/Footer'
 import { EditorialNav } from '../../components/EditorialNav'
 
-import { canManageUser, type AccountStatus, type Role } from '@/access/roles'
+import { canManageUser, rolesGrantableBy, type AccountStatus, type Role } from '@/access/roles'
 import type { AccessRequest, User } from '@/payload-types'
 import { requireRole } from '@/lib/requireRole'
 
@@ -39,6 +39,8 @@ function personName(value: AccessRequest['reviewer'] | AccessRequest['user']) {
 
 export default async function EditorialUsersPage() {
   const { payload, user } = await requireRole('manager')
+
+  const grantableRoles = rolesGrantableBy(user)
 
   const [pendingRequests, failedProvisioning, recentDecisions, users] = await Promise.all([
     payload.find({
@@ -214,8 +216,11 @@ export default async function EditorialUsersPage() {
 
                         <div className="select-wrap">
                           <select name="role" defaultValue={item.role} aria-label="Role">
-                            <option value="editor">Editor</option>
-                            <option value="manager">Manager</option>
+                            {grantableRoles.map((role) => (
+                              <option key={role} value={role}>
+                                {roleLabels[role]}
+                              </option>
+                            ))}
                           </select>
                         </div>
 

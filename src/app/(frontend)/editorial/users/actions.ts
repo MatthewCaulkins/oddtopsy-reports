@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { canAssignRole, canSetAccountStatus, isAssignableRole } from '@/access/roles'
+import { canAssignRole, canSetAccountStatus, isAssignableRole, isRole } from '@/access/roles'
 import {
   approveAccessRequest,
   provisionAccess,
@@ -58,8 +58,9 @@ export async function retryProvisioning(formData: FormData) {
 }
 
 /*
- * Existing accounts. Managers change editors only; the admin changes
- * anyone but themselves. No one can grant admin.
+ * Existing accounts. Managers change editors only; admins change anyone
+ * but themselves, including granting admin. The last active admin is
+ * protected by the Users collection hooks.
  */
 
 export async function updateUserRole(formData: FormData) {
@@ -68,7 +69,7 @@ export async function updateUserRole(formData: FormData) {
   const id = getID(formData)
   const role = formData.get('role')
 
-  if (!isAssignableRole(role)) {
+  if (!isRole(role)) {
     throw new Error('Invalid user role.')
   }
 

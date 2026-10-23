@@ -1,6 +1,7 @@
 import * as migration_20260918_034400 from './20260918_034400';
 import * as migration_20261022_024423_rbac_media_audience_revisions from './20261022_024423_rbac_media_audience_revisions';
 import * as migration_20261022_210138_access_requests_account_status from './20261022_210138_access_requests_account_status';
+import * as migration_20261023_033327_users_cognito_sub from './20261023_033327_users_cognito_sub';
 
 export const migrations = [
   {
@@ -16,6 +17,11 @@ export const migrations = [
   {
     up: migration_20261022_210138_access_requests_account_status.up,
     down: migration_20261022_210138_access_requests_account_status.down,
-    name: '20261022_210138_access_requests_account_status'
+    name: '20261022_210138_access_requests_account_status',
+  },
+  {
+    up: migration_20261023_033327_users_cognito_sub.up,
+    down: migration_20261023_033327_users_cognito_sub.down,
+    name: '20261023_033327_users_cognito_sub'
   },
 ];

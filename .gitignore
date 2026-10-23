@@ -64,3 +64,6 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# IAM policies are attached by hand in the AWS console; kept out of Git.
+/deploy/aws/iam/

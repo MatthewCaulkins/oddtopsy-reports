@@ -171,6 +171,10 @@ export interface User {
    * Invited until the first sign-in. Only active accounts have editorial access.
    */
   accountStatus: 'invited' | 'active' | 'disabled';
+  /**
+   * Linked Cognito account. Set automatically when the account is provisioned.
+   */
+  cognitoSub?: string | null;
   profile?: {
     displayName?: string | null;
     title?: string | null;
@@ -697,6 +701,7 @@ export interface SiteContentSelect<T extends boolean = true> {
 export interface UsersSelect<T extends boolean = true> {
   role?: T;
   accountStatus?: T;
+  cognitoSub?: T;
   profile?:
     | T
     | {

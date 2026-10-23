@@ -39,12 +39,30 @@ export function hasRole(
   return roleRank[user.role] >= roleRank[minimum]
 }
 
+// Roles granted when approving an access request. Admin is never granted there.
 export const assignableRoles = ['editor', 'manager'] as const satisfies Role[]
 
 export type AssignableRole = (typeof assignableRoles)[number]
 
 export function isAssignableRole(value: unknown): value is AssignableRole {
   return assignableRoles.includes(value as AssignableRole)
+}
+
+const allRoles = ['editor', 'manager', 'admin'] as const satisfies Role[]
+
+export function isRole(value: unknown): value is Role {
+  return allRoles.includes(value as Role)
+}
+
+/*
+ * Roles the actor may choose on the Users page: admins may also grant
+ * admin; managers choose between editor and manager.
+ */
+export function rolesGrantableBy(actor: AccountHolder | null | undefined): readonly Role[] {
+  if (hasRole(actor, 'admin')) return allRoles
+  if (hasRole(actor, 'manager')) return assignableRoles
+
+  return []
 }
 
 export const settableAccountStatuses = ['active', 'disabled'] as const satisfies AccountStatus[]
@@ -57,19 +75,17 @@ export function isSettableAccountStatus(value: unknown): value is SettableAccoun
 
 /*
  * Who may manage whose account (role and status):
- * - There is a single admin. No one can grant admin, and the
- *   admin account cannot be changed from the app.
- * - No one manages their own account.
- * - Managers manage editors, but not other managers.
- * - The admin manages everyone else.
+ * - No one manages their own account, admins included.
+ * - Admins manage everyone else, including other admins.
+ * - Managers manage editors only.
+ * The last active admin is additionally protected in the Users
+ * collection hooks (src/lib/auth/adminGuard.ts).
  */
 export function canManageUser(
   actor: AccountHolder | null | undefined,
   target: AccountHolder | null | undefined,
 ) {
   if (!actor || !target) return false
-
-  if (target.role === 'admin') return false
 
   if (String(actor.id) === String(target.id)) return false
 
@@ -85,7 +101,7 @@ export function canAssignRole(
   target: AccountHolder | null | undefined,
   newRole: unknown,
 ) {
-  return isAssignableRole(newRole) && canManageUser(actor, target)
+  return isRole(newRole) && rolesGrantableBy(actor).includes(newRole) && canManageUser(actor, target)
 }
 
 /*
