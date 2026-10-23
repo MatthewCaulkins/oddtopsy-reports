@@ -1,8 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
-import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { s3Storage } from '@payloadcms/storage-s3'
-import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2'
-import nodemailer from 'nodemailer'
 
 import path from 'path'
 import { buildConfig, type EmailAdapter } from 'payload'
@@ -19,6 +16,7 @@ import { SiteContent } from './collections/SiteContent'
 import { Users } from './collections/Users'
 
 import { richTextEditor } from '@/editor/richTextEditor'
+import { sesEmailAdapter } from '@/lib/email/sesAdapter'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -35,11 +33,11 @@ const databaseURL =
     : '')
 
 /*
- * Email goes through Amazon SES using the server's AWS credentials
- * (the ECS task role in production). Without EMAIL_FROM_ADDRESS,
- * as in local development, emails are printed to the server log
- * instead; bodies (which hold reset and revision links) are only
- * printed outside production.
+ * Email goes through Amazon SES (src/lib/email/sesAdapter.ts) using the
+ * server's AWS credentials (the ECS task role in production). Without
+ * EMAIL_FROM_ADDRESS, as in local development, emails are printed to
+ * the server log instead; bodies (which hold reset and revision links)
+ * are only printed outside production.
  */
 const emailFromAddress = process.env.EMAIL_FROM_ADDRESS
 
@@ -59,18 +57,10 @@ const logEmailAdapter: EmailAdapter = ({ payload }) => ({
 })
 
 const email = emailFromAddress
-  ? nodemailerAdapter({
-      defaultFromAddress: emailFromAddress,
-      defaultFromName: process.env.EMAIL_FROM_NAME || 'Oddtopsy Reports',
-      skipVerify: true,
-      transport: nodemailer.createTransport({
-        SES: {
-          sesClient: new SESv2Client({
-            region: process.env.SES_REGION || process.env.AWS_REGION || 'us-east-1',
-          }),
-          SendEmailCommand,
-        },
-      }),
+  ? sesEmailAdapter({
+      fromAddress: emailFromAddress,
+      fromName: process.env.EMAIL_FROM_NAME || 'Oddtopsy Reports',
+      region: process.env.SES_REGION || process.env.AWS_REGION || 'us-east-1',
     })
   : logEmailAdapter
 

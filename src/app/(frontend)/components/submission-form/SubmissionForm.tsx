@@ -5,6 +5,8 @@ import { useFormStatus } from 'react-dom'
 import type { FocusArea, Media, Submission } from '@/payload-types'
 import { FileUpload, type ExistingFile } from '../FileUpload'
 import { PayloadManuscriptEditor } from './PayloadManuscriptEditor'
+import { DateInput } from '../DateInput'
+import { isValidEmail } from '@/lib/validation'
 
 type CoAuthor = {
   id?: string | null
@@ -41,11 +43,14 @@ function SubmissionButton({ label }: { label: string }) {
   )
 }
 
+type ActionResult = { error: string; field?: string } | void
+
 type SubmissionFormProps = {
   mode: 'create' | 'edit'
   focusAreas: FocusArea[]
   submission?: Submission
-  action: (formData: FormData) => void | Promise<void>
+  // May return an error for the form to show; success redirects.
+  action: (formData: FormData) => ActionResult | Promise<ActionResult>
   submitLabel?: string
   allowMediaLibrary?: boolean
 }
@@ -109,6 +114,11 @@ export function SubmissionForm({
   allowMediaLibrary = false,
 }: SubmissionFormProps) {
   const isEdit = mode === 'edit'
+
+  // Identifies this form so a retried submit cannot create a duplicate.
+  const [submissionKey] = useState(() => crypto.randomUUID())
+
+  const [serverError, setServerError] = useState<string | null>(null)
 
   const [existingFeaturedFiles, setExistingFeaturedFiles] = useState<ExistingFile[]>(() =>
     mediaToExistingFile(submission?.featuredImage),
@@ -197,6 +207,20 @@ export function SubmissionForm({
       requiredFields.splice(1, 0, {
         name: 'featuredImage',
         label: 'Featured image',
+      })
+    }
+
+    // The same rule the server and database use; browsers accept e.g. "name@host".
+    const emailInput = form.elements.namedItem('correspondingAuthorEmail')
+
+    if (
+      emailInput instanceof HTMLInputElement &&
+      emailInput.value.trim() &&
+      !isValidEmail(emailInput.value.trim())
+    ) {
+      nextErrors.push({
+        name: 'correspondingAuthorEmail',
+        label: 'Corresponding author email must be a complete address, such as name@example.org',
       })
     }
 
@@ -297,7 +321,23 @@ export function SubmissionForm({
   return (
     <form
       className="submit-form"
-      action={action}
+      action={async (formData) => {
+        setServerError(null)
+
+        const result = await action(formData)
+
+        // Success redirects; an error leaves the form (and the chosen files) as they were.
+        if (result && 'error' in result) {
+          setServerError(result.error)
+
+          if (result.field) setErrors([{ name: result.field, label: result.error }])
+
+          document.querySelector('.form-error-summary')?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          })
+        }
+      }}
       noValidate
       onSubmit={(event) => {
         const nextErrors = validateForm(event.currentTarget)
@@ -320,7 +360,16 @@ export function SubmissionForm({
     >
       {isEdit && submission?.id && <input type="hidden" name="id" value={submission.id} />}
 
-      {errors.length > 0 && (
+      {!isEdit && <input type="hidden" name="submissionKey" value={submissionKey} />}
+
+      {serverError && (
+        <div className="form-error-summary" role="alert">
+          <h3>Your paper was not submitted.</h3>
+          <p>{serverError}</p>
+        </div>
+      )}
+
+      {!serverError && errors.length > 0 && (
         <div className="form-error-summary">
           <h3>Please complete the required fields.</h3>
           <ul>
@@ -420,10 +469,9 @@ export function SubmissionForm({
 
         <div className="form-row">
           <label htmlFor="findingDate">Date of finding</label>
-          <input
+          <DateInput
             id="findingDate"
             name="findingDate"
-            type="date"
             defaultValue={submission?.findingDate ? submission.findingDate.slice(0, 10) : ''}
           />
         </div>

@@ -1,158 +1,41 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { after } from 'next/server'
 import { getPayload } from 'payload'
-import config from '@/payload.config'
 
-export async function submitPaper(formData: FormData) {
+import config from '@/payload.config'
+import { createPublicSubmission, SubmissionError } from '@/lib/submissions'
+import { notifyStaffOfSubmission } from '@/lib/notifications'
+
+export type SubmitPaperResult = { error: string; field?: string } | void
+
+/*
+ * Expected problems come back to the form (which keeps what the author
+ * entered) instead of throwing to the error page. The staff email goes
+ * out after the response, so it can never make a saved submission look
+ * like a failure.
+ */
+export async function submitPaper(formData: FormData): Promise<SubmitPaperResult> {
   const payload = await getPayload({ config })
 
-  const title = String(formData.get('title') || '').trim()
-  const subtitle = String(formData.get('subtitle') || '').trim()
-  //   const featuredImage = formData.get('featuredImage') as File | null
-  //   const focusAreaRaw = String(formData.get('focusArea') || '').trim()
-  //   const focusArea = focusAreaRaw ? Number(focusAreaRaw) : undefined
-
-  const focusAreas = formData
-    .getAll('focusArea')
-    .map((value) => Number(value))
-    .filter(Boolean)
-
-  const findingDate = String(formData.get('findingDate') || '').trim()
-  const location = String(formData.get('location') || '').trim()
-  const mediaNotes = String(formData.get('mediaNotes') || '').trim()
-  const abstract = String(formData.get('abstract') || '').trim()
-  const leadAuthorName = String(formData.get('leadAuthorName') || '').trim()
-  const leadAuthorAffiliation = String(formData.get('leadAuthorAffiliation') || '').trim()
-
-  const correspondingAuthorName = String(formData.get('correspondingAuthorName') || '').trim()
-  const correspondingAuthorEmail = String(formData.get('correspondingAuthorEmail') || '').trim()
-  const correspondingAuthorAffiliation = String(
-    formData.get('correspondingAuthorAffiliation') || '',
-  ).trim()
-
-  const authorMessage = String(formData.get('authorMessage') || '').trim()
-  const submissionType = String(formData.get('submissionType') || 'upload') as 'upload' | 'editor'
-  const manuscriptBody = String(formData.get('manuscriptBody') || '').trim()
-  const pdf = formData.get('manuscriptPDF') as File | null
-
-  const supportingImages = formData.getAll('supportingImages') as File[]
-  const keywordsRaw = String(formData.get('keywords') || '').trim()
-
-  const keywords = keywordsRaw
-    ? keywordsRaw
-        .split(',')
-        .map((keyword) => keyword.trim())
-        .filter(Boolean)
-        .map((keyword) => ({ keyword }))
-    : []
-
-  if (!title || !leadAuthorName || !correspondingAuthorName || !correspondingAuthorEmail) {
-    throw new Error('Missing required fields.')
-  }
-
-  const featuredImage = formData.get('featuredImage') as File | null
-
-  if (!featuredImage || featuredImage.size === 0) {
-    throw new Error('Please upload a featured image.')
-  }
-
-  let mediaID: number | undefined
-
-  if (submissionType === 'upload') {
-    if (!pdf || pdf.size === 0) {
-      throw new Error('Please upload a manuscript PDF.')
-    }
-
-    mediaID = await uploadMedia(pdf, title)
-  }
-
-  if (submissionType === 'editor' && !manuscriptBody) {
-    throw new Error('Please enter the manuscript text.')
-  }
-
-  let coAuthors = []
+  let result
 
   try {
-    coAuthors = JSON.parse(String(formData.get('coAuthors') || '[]'))
-      .filter((author: any) => author.name?.trim())
-      .map((author: any) => ({
-        name: String(author.name || '').trim(),
-        affiliation: String(author.affiliation || '').trim(),
-      }))
-  } catch {
-    coAuthors = []
+    result = await createPublicSubmission(payload, formData)
+  } catch (error) {
+    if (error instanceof SubmissionError) {
+      return { error: error.message, field: error.field }
+    }
+
+    throw error
   }
 
-  async function uploadMedia(file: File, alt: string) {
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
+  if (!result.duplicate) {
+    const { submission } = result
 
-    const media = await payload.create({
-      collection: 'media',
-      data: {
-        alt,
-      },
-      file: {
-        data: buffer,
-        mimetype: file.type,
-        name: file.name,
-        size: file.size,
-      },
-    })
-
-    return Number(media.id)
+    after(() => notifyStaffOfSubmission(payload, submission))
   }
-
-  // Images
-  const featuredImageID = await uploadMedia(featuredImage, `${title} featured image`)
-
-  const supportingImageData = await Promise.all(
-    supportingImages
-      .filter((file) => file.size > 0)
-      .map(async (file, index) => ({
-        image: await uploadMedia(file, `${title} supporting image ${index + 1}`),
-        caption: '',
-      })),
-  )
-
-  await payload.create({
-    collection: 'submissions',
-    data: {
-      title,
-      subtitle,
-      featuredImage: featuredImageID,
-      abstract,
-      focusArea: focusAreas,
-      keywords,
-      findingDate: findingDate || undefined,
-      location,
-
-      leadAuthor: {
-        name: leadAuthorName,
-        affiliation: leadAuthorAffiliation,
-      },
-
-      correspondingAuthor: {
-        name: correspondingAuthorName,
-        email: correspondingAuthorEmail,
-        affiliation: correspondingAuthorAffiliation,
-      },
-
-      coAuthors,
-
-      submissionType,
-
-      manuscriptPDF: submissionType === 'upload' ? mediaID : undefined,
-
-      manuscriptBody: submissionType === 'editor' ? manuscriptBody : undefined,
-
-      supportingImages: supportingImageData,
-      mediaNotes,
-      authorMessage,
-      workflowStatus: 'submitted',
-    },
-  })
 
   redirect('/submit/thank-you')
 }

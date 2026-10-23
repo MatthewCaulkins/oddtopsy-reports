@@ -4,6 +4,7 @@ import config from '@/payload.config'
 import { NavLinks } from './NavLinks'
 import { LogoutButton } from '@/components/LogoutButton'
 import { hasRole } from '@/access/roles'
+import { getAuthConfig } from '@/lib/auth/config'
 
 function getInitials(email?: string | null) {
   if (!email) return 'U'
@@ -25,6 +26,9 @@ export async function Header() {
   const canUseEditorial = hasRole(user, 'editor')
 
   const isAdmin = hasRole(user, 'admin')
+
+  const { password } = getAuthConfig()
+  const signInHref = password ? '/login' : '/auth/login?next=/editorial'
 
   return (
     <header className="site-header">
@@ -48,8 +52,9 @@ export async function Header() {
             </details>
           ) : (
             <>
-              <a href="/login" className="nav-login">
-                Login
+              {/* Cognito-only: straight to Cognito's sign-in page. */}
+              <a href={signInHref} className="nav-login">
+                {password ? 'Login' : 'Sign In'}
               </a>
 
               <a href="/request-access" className="nav-login nav-request-access">

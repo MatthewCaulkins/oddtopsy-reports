@@ -5,6 +5,7 @@ import config from '@/payload.config'
 import type { SiteContent } from '@/payload-types'
 
 import { PaperCard } from '../PaperCard'
+import { DateInput } from '../DateInput'
 import { hasRichContent } from '@/lib/hasRichContent'
 
 const PAPERS_PER_PAGE = 6
@@ -270,13 +271,13 @@ export async function PapersContent({ content, searchParams = {}, editorial = fa
             <div className="archive-filter-field">
               <label htmlFor="archive-from">Published from</label>
 
-              <input id="archive-from" name="from" type="date" defaultValue={from} />
+              <DateInput id="archive-from" name="from" defaultValue={from} />
             </div>
 
             <div className="archive-filter-field">
               <label htmlFor="archive-to">Published through</label>
 
-              <input id="archive-to" name="to" type="date" defaultValue={to} />
+              <DateInput id="archive-to" name="to" defaultValue={to} />
             </div>
           </div>
 

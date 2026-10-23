@@ -324,6 +324,22 @@ export const Submissions: CollectionConfig = {
       },
     },
     {
+      // One per submission form, so a retried or double-clicked submit
+      // cannot create a duplicate (src/lib/submissions.ts).
+      name: 'submissionKey',
+      type: 'text',
+      unique: true,
+      index: true,
+      access: {
+        read: () => false,
+        create: () => false,
+        update: () => false,
+      },
+      admin: {
+        hidden: true,
+      },
+    },
+    {
       // The author's emailed revision link. Never exposed through the API.
       name: 'revisionAccess',
       type: 'group',

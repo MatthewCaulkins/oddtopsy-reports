@@ -48,7 +48,9 @@ export const Users: CollectionConfig = {
    */
   auth: {
     strategies: authConfig.cognito ? [cognitoStrategy(authConfig.cognito)] : [],
-    ...(authConfig.password ? {} : { disableLocalStrategy: { enableFields: true } }),
+    // Password-off: Payload's login, password-reset and password-session
+    // endpoints all refuse; Cognito users have no password at all.
+    ...(authConfig.password ? {} : { disableLocalStrategy: { enableFields: true, optionalPassword: true } }),
   },
   /*
    * These rules govern the REST/GraphQL API and Payload Admin.
@@ -57,7 +59,11 @@ export const Users: CollectionConfig = {
    * each other so shared work shows who did what.
    */
   access: {
-    admin: ({ req }) => hasRole(req.user, 'admin'),
+    // Payload Admin: active admins only. Once password sign-in is off, the
+    // request must also have been authenticated by Cognito.
+    admin: ({ req }) =>
+      hasRole(req.user, 'admin') &&
+      (authConfig.password || (req.user as { _strategy?: string } | null)?._strategy === 'cognito'),
     create: ({ req }) => hasRole(req.user, 'admin'),
     read: ({ req }) => {
       if (hasRole(req.user, 'editor')) return true

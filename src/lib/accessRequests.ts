@@ -9,7 +9,9 @@ import {
 
 import { canGrantOnApproval, canManageUser, type AssignableRole } from '@/access/roles'
 import type { AccessRequest, User } from '@/payload-types'
+import { getAuthConfig } from '@/lib/auth/config'
 import { getIdentityProvider } from '@/lib/identity'
+import { notifyStaffOfAccessRequest } from '@/lib/notifications'
 
 /*
  * The access request workflow:
@@ -62,9 +64,12 @@ export async function submitAccessRequest(
     }),
   ])
 
-  if (existingUser.docs.length > 0 || openRequest.docs.length > 0) return
+  if (existingUser.docs.length > 0 || openRequest.docs.length > 0) {
+    payload.logger.info({ event: 'access_request.duplicate' }, 'Access request ignored: email already known')
+    return
+  }
 
-  await payload.create({
+  const request = await payload.create({
     collection: 'access-requests',
     data: {
       name: input.name,
@@ -74,6 +79,9 @@ export async function submitAccessRequest(
       source: 'form',
     },
   })
+
+  // The request is committed; tell the reviewers. Never throws.
+  await notifyStaffOfAccessRequest(payload, request)
 }
 
 /*
@@ -125,8 +133,9 @@ export async function approveAccessRequest(
         collection: 'users',
         data: {
           email: normalizeEmail(request.email),
-          // Never shown to anyone; the person sets their own password from the invite.
-          password: randomBytes(32).toString('base64url'),
+          // Password sign-in only: a placeholder nobody knows; the person sets
+          // their own from the invite. With Cognito-only sign-in, no password.
+          ...(getAuthConfig().password ? { password: randomBytes(32).toString('base64url') } : {}),
           role,
           accountStatus: 'invited',
           profile: {
@@ -279,4 +288,34 @@ export async function resendInvite(payload: Payload, actor: User, userID: number
   }
 
   await getIdentityProvider().invite(payload, target)
+}
+
+/*
+ * Gives an existing account that predates Cognito its Cognito sign-in:
+ * creates the Cognito user, stores the returned sub and lets Cognito
+ * send the invitation. Admin-initiated, so this is a trusted link, never
+ * an email match. The account keeps its role and status.
+ */
+export async function sendSignInInvite(payload: Payload, actor: User, userID: number) {
+  if (!getAuthConfig().cognito) {
+    throw new AccessRequestError('Cognito sign-in is not enabled.')
+  }
+
+  const target = await payload.findByID({ collection: 'users', id: userID, depth: 0, overrideAccess: true })
+
+  if (!canManageUser(actor, target)) {
+    throw new AccessRequestError('You cannot manage this account.')
+  }
+
+  if (target.cognitoSub) {
+    throw new AccessRequestError('This account already has Cognito sign-in.')
+  }
+
+  if (target.accountStatus === 'disabled') {
+    throw new AccessRequestError('Re-enable the account before sending a sign-in invite.')
+  }
+
+  await getIdentityProvider().invite(payload, target)
+
+  payload.logger.info({ event: 'account.signin_invite', userID }, 'Cognito sign-in invite sent to an existing account')
 }

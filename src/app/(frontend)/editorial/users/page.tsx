@@ -2,29 +2,18 @@ import { Header } from '@/app/(frontend)/components/Header'
 import { Footer } from '@/app/(frontend)/components/Footer'
 import { EditorialNav } from '../../components/EditorialNav'
 
-import { canManageUser, rolesGrantableBy, type AccountStatus, type Role } from '@/access/roles'
+import { canManageUser, rolesGrantableBy, type Role } from '@/access/roles'
 import type { AccessRequest, User } from '@/payload-types'
+import { getAuthConfig } from '@/lib/auth/config'
 import { requireRole } from '@/lib/requireRole'
 
-import {
-  approveRequest,
-  rejectRequest,
-  resendUserInvite,
-  retryProvisioning,
-  setAccountStatus,
-  updateUserRole,
-} from './actions'
+import { approveRequest, rejectRequest, retryProvisioning } from './actions'
+import { UserAccountControls } from './UserAccountControls'
 
 const roleLabels: Record<Role, string> = {
   editor: 'Editor',
   manager: 'Manager',
   admin: 'Admin',
-}
-
-const statusLabels: Record<AccountStatus, string> = {
-  invited: 'Invited',
-  active: 'Active',
-  disabled: 'Disabled',
 }
 
 function formatDate(value?: string | null) {
@@ -41,6 +30,8 @@ export default async function EditorialUsersPage() {
   const { payload, user } = await requireRole('manager')
 
   const grantableRoles = rolesGrantableBy(user)
+
+  const cognitoEnabled = Boolean(getAuthConfig().cognito)
 
   const [pendingRequests, failedProvisioning, recentDecisions, users] = await Promise.all([
     payload.find({
@@ -205,56 +196,15 @@ export default async function EditorialUsersPage() {
 
                   <p>{item.email}</p>
 
-                  <p className="editorial-dashboard-meta">{statusLabels[item.accountStatus]}</p>
-                </div>
-
-                <div className="editorial-user-actions">
-                  {canManage ? (
-                    <>
-                      <form key={`${item.id}-${item.role}`} action={updateUserRole}>
-                        <input type="hidden" name="id" value={item.id} />
-
-                        <div className="select-wrap">
-                          <select name="role" defaultValue={item.role} aria-label="Role">
-                            {grantableRoles.map((role) => (
-                              <option key={role} value={role}>
-                                {roleLabels[role]}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <button className="button secondary" type="submit">
-                          Update Role
-                        </button>
-                      </form>
-
-                      {item.accountStatus === 'invited' && (
-                        <form action={resendUserInvite}>
-                          <input type="hidden" name="id" value={item.id} />
-
-                          <button className="button secondary" type="submit">
-                            Resend Invite
-                          </button>
-                        </form>
-                      )}
-
-                      <form action={setAccountStatus}>
-                        <input type="hidden" name="id" value={item.id} />
-                        <input
-                          type="hidden"
-                          name="accountStatus"
-                          value={item.accountStatus === 'disabled' ? 'active' : 'disabled'}
-                        />
-
-                        <button className="button secondary" type="submit">
-                          {item.accountStatus === 'disabled' ? 'Re-enable' : 'Disable'}
-                        </button>
-                      </form>
-                    </>
-                  ) : (
-                    <span className="editorial-role-badge">{roleLabels[item.role]}</span>
-                  )}
+                  <UserAccountControls
+                    key={`${item.id}-${item.role}-${item.accountStatus}`}
+                    userID={item.id}
+                    initialRole={item.role}
+                    initialStatus={item.accountStatus}
+                    canManage={canManage}
+                    grantableRoles={grantableRoles}
+                    needsSignInInvite={cognitoEnabled && !item.cognitoSub}
+                  />
                 </div>
               </article>
             )

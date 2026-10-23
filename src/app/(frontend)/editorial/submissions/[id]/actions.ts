@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { after } from 'next/server'
 
 import type { Submission } from '@/payload-types'
 import { requireRole } from '@/lib/requireRole'
@@ -293,6 +294,28 @@ export async function requestRevisions(formData: FormData) {
     throw new Error('Restore this submission from the trash first.')
   }
 
+  // A double-click (same request moments apart) would otherwise email a
+  // second link and silently invalidate the first.
+  if (submission.workflowStatus === 'revision_requested') {
+    const recent = await payload.find({
+      collection: 'editor-notes',
+      where: {
+        and: [
+          { submission: { equals: id } },
+          { noteType: { equals: 'revision_request' } },
+          { createdAt: { greater_than: new Date(Date.now() - 2 * 60 * 1000).toISOString() } },
+        ],
+      },
+      sort: '-createdAt',
+      limit: 1,
+      depth: 0,
+    })
+
+    if (recent.docs[0]?.note === message) {
+      redirect(`/editorial/submissions/${id}?mode=preview&revisions=sent`)
+    }
+  }
+
   const { token, tokenHash, expiresAt } = createRevisionToken()
 
   await payload.create({
@@ -317,7 +340,8 @@ export async function requestRevisions(formData: FormData) {
     },
   })
 
-  await sendRevisionRequest(payload, updated, `${siteURL}/revise/${token}`, message, expiresAt)
+  // Saved; email the author after the response so delivery can't affect it.
+  after(() => sendRevisionRequest(payload, updated, `${siteURL}/revise/${token}`, message, expiresAt))
 
   revalidatePath('/')
   revalidatePath('/articles')

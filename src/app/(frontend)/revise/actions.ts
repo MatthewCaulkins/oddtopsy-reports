@@ -3,6 +3,7 @@
 import { cookies, headers as getHeaders } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
@@ -37,7 +38,8 @@ export async function submitRevision(formData: FormData) {
     },
   })
 
-  await notifyStaffOfResubmission(payload, updated)
+  // Saved (and the link is now spent, so a repeat can't resend this); tell staff after the response.
+  after(() => notifyStaffOfResubmission(payload, updated))
 
   const cookieStore = await cookies()
   cookieStore.delete(revisionSessionCookie)

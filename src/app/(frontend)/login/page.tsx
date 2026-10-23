@@ -2,6 +2,8 @@ import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { LoginForm } from './LoginForm'
 
+import { redirect } from 'next/navigation'
+
 import { getAuthConfig } from '@/lib/auth/config'
 
 type Props = {
@@ -19,6 +21,10 @@ const errorMessages: Record<string, string> = {
 export default async function LoginPage({ searchParams }: Props) {
   const { error } = await searchParams
   const { password, cognito } = getAuthConfig()
+
+  // Cognito-only: nothing to choose here, so go straight to Cognito
+  // (unless we are showing why the last sign-in didn't work).
+  if (!password && !error) redirect('/auth/login?next=/editorial')
 
   return (
     <main className="site">

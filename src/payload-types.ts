@@ -346,6 +346,7 @@ export interface Submission {
     | 'accepted'
     | 'rejected'
     | 'published';
+  submissionKey?: string | null;
   revisionAccess?: {
     tokenHash?: string | null;
     expiresAt?: string | null;
@@ -656,6 +657,7 @@ export interface SubmissionsSelect<T extends boolean = true> {
       };
   authorMessage?: T;
   workflowStatus?: T;
+  submissionKey?: T;
   revisionAccess?:
     | T
     | {

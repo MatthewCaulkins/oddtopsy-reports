@@ -3475,3 +3475,8 @@ select:focus {
     margin-left: 0;
   } */
 }
+
+/* Date fields open their calendar from anywhere in the field (DateInput). */
+input.date-input {
+  cursor: pointer;
+}

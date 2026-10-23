@@ -1,8 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
 import { hasRole } from '@/access/roles'
-import type { AccessRequest } from '@/payload-types'
-import { notifyStaffOfAccessRequest } from '@/lib/notifications'
 
 /*
  * Applications for an editorial account, and the audit trail of
@@ -26,19 +24,8 @@ export const AccessRequests: CollectionConfig = {
     delete: ({ req }) => hasRole(req.user, 'admin'),
   },
 
-  hooks: {
-    afterChange: [
-      async ({ doc, operation, req }) => {
-        const request = doc as AccessRequest
-
-        if (operation === 'create' && request.status === 'pending' && request.source === 'form') {
-          await notifyStaffOfAccessRequest(req.payload, request)
-        }
-
-        return doc
-      },
-    ],
-  },
+  // Notifications are sent by src/lib/accessRequests.ts after the change commits,
+  // not from hooks (which run inside the database transaction).
 
   fields: [
     {

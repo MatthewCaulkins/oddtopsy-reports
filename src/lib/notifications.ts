@@ -2,30 +2,42 @@ import type { Payload } from 'payload'
 
 import type { Role } from '@/access/roles'
 import type { AccessRequest, Submission, User } from '@/payload-types'
+import { renderEmail, type EmailContent } from '@/lib/email/template'
 
 /*
- * Outgoing notification emails. A failed email is logged but never
- * breaks the request, review, or revision that triggered it.
+ * Outgoing notification emails.
+ *
+ * - Callers send these only after the database change they describe has
+ *   committed, and outside the user's request where possible (next/server
+ *   `after`), so an email problem never fails a saved submission or review.
+ * - Each recipient gets their own message: staff addresses are not shared,
+ *   and one bad address does not stop the rest.
+ * - Every attempt is logged with the event name, counts and SES message
+ *   IDs. Logs never include tokens, revision links or manuscript content;
+ *   recipients appear only as a count.
  */
 
-export const siteURL =(process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '')
+export const siteURL = (process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '')
 
-function escapeHTML(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
+export type NotificationEvent =
+  | 'system.test'
+  | 'access_request.received'
+  | 'access_request.rejected'
+  | 'account.invite'
+  | 'submission.received'
+  | 'submission.revision_requested'
+  | 'submission.resubmitted'
+
+export type DeliveryResult = {
+  event: NotificationEvent
+  recipients: number
+  sent: number
+  failed: number
 }
 
-function paragraphs(text: string) {
-  return text
-    .split(/\n{2,}/)
-    .map((paragraph) => `<p>${escapeHTML(paragraph).replaceAll('\n', '<br />')}</p>`)
-    .join('')
-}
+const staffRoles: Role[] = ['editor', 'manager', 'admin']
 
-async function getStaffEmails(payload: Payload, roles: Role[]) {
+export async function getStaffEmails(payload: Payload, roles: Role[]) {
   const staff = await payload.find({
     collection: 'users',
     where: {
@@ -33,57 +45,165 @@ async function getStaffEmails(payload: Payload, roles: Role[]) {
     },
     pagination: false,
     depth: 0,
+    overrideAccess: true,
   })
 
-  return staff.docs.map((user) => user.email).filter(Boolean)
+  return [...new Set(staff.docs.map((user) => user.email).filter(Boolean))]
 }
 
-async function send(
+function errorSummary(error: unknown) {
+  return error instanceof Error ? { name: error.name, message: error.message } : { message: String(error) }
+}
+
+/*
+ * Sends one message per recipient and logs the outcome. Never throws
+ * unless `throwOnFailure` is set (used for invites, whose failure is
+ * recorded on the access request).
+ */
+async function deliver(
   payload: Payload,
-  description: string,
-  message: { to: string | string[]; subject: string; text: string; html: string },
-) {
-  if (Array.isArray(message.to) && message.to.length === 0) return
+  event: NotificationEvent,
+  getRecipients: string[] | (() => Promise<string[]>),
+  subject: string,
+  content: EmailContent,
+  { throwOnFailure = false } = {},
+): Promise<DeliveryResult> {
+  let recipients: string[]
 
   try {
-    await payload.sendEmail(message)
+    recipients = typeof getRecipients === 'function' ? await getRecipients() : getRecipients
   } catch (error) {
-    payload.logger.error({ err: error }, `Failed to send ${description} email`)
+    payload.logger.error({ event, errors: [errorSummary(error)] }, `Notification ${event}: could not look up recipients`)
+
+    if (throwOnFailure) throw error
+
+    return { event, recipients: 0, sent: 0, failed: 0 }
   }
+
+  const result: DeliveryResult = { event, recipients: recipients.length, sent: 0, failed: 0 }
+
+  if (recipients.length === 0) {
+    payload.logger.warn({ event }, 'Notification has no recipients')
+    return result
+  }
+
+  const { html, text } = renderEmail(content)
+  const messageIds: string[] = []
+  const errors: ReturnType<typeof errorSummary>[] = []
+
+  for (const to of recipients) {
+    try {
+      const response = (await payload.sendEmail({ to, subject, html, text })) as { messageId?: string } | undefined
+
+      result.sent++
+      if (response?.messageId) messageIds.push(response.messageId)
+    } catch (error) {
+      result.failed++
+      errors.push(errorSummary(error))
+    }
+  }
+
+  if (result.failed > 0) {
+    payload.logger.error({ ...result, messageIds, errors }, `Notification ${event}: ${result.failed} of ${result.recipients} failed`)
+
+    if (throwOnFailure) {
+      throw new Error(errors[0]?.message || 'Email could not be sent.')
+    }
+  } else {
+    payload.logger.info({ ...result, messageIds }, `Notification ${event} sent`)
+  }
+
+  return result
 }
 
-export async function notifyStaffOfAccessRequest(payload: Payload, request: AccessRequest) {
-  const reviewURL = `${siteURL}/editorial/users`
-  const affiliation = request.affiliation ? ` from ${request.affiliation}` : ''
+function formatDate(value: string | Date) {
+  return new Date(value).toLocaleDateString('en-US', { dateStyle: 'long' })
+}
 
-  await send(payload, 'access request', {
-    to: await getStaffEmails(payload, ['manager', 'admin']),
-    subject: `New access request: ${request.name}`,
-    text: `${request.name} (${request.email})${affiliation} has requested an editorial account.\n\nReview pending requests: ${reviewURL}`,
-    html: `<p><strong>${escapeHTML(request.name)}</strong> (${escapeHTML(request.email)})${escapeHTML(affiliation)} has requested an editorial account.</p><p><a href="${reviewURL}">Review pending requests</a></p>`,
+/*
+ * Operational check of the email path (src/scripts/sendTestEmail.ts).
+ */
+export async function sendTestNotification(payload: Payload, recipients: string[]) {
+  return deliver(payload, 'system.test', recipients, 'Oddtopsy Reports email test', {
+    preheader: 'A test of the editorial notification system.',
+    heading: 'Email delivery test',
+    paragraphs: [
+      'This is a test of the Oddtopsy Reports editorial notification system. If you are reading it, application emails are being delivered.',
+    ],
+    details: [{ label: 'Sent', value: new Date().toUTCString() }],
+    action: { label: 'Open Editorial', url: `${siteURL}/editorial` },
   })
 }
 
 /*
- * Unlike the notifications above, this throws on failure so the
- * caller can record it against the access request and retry.
+ * Staff notifications
  */
-export async function sendAccountInvite(
-  payload: Payload,
-  user: User,
-  setupURL: string,
-  expiresAt: Date,
-) {
-  const name = user.profile?.displayName || user.email
-  const expires = expiresAt.toLocaleDateString('en-US', { dateStyle: 'long' })
 
-  await payload.sendEmail({
-    to: user.email,
-    subject: 'Your Oddtopsy Reports editorial account',
-    text: `Dear ${name},\n\nYour request for an Oddtopsy Reports editorial account has been approved.\n\nSet up your account here (link valid until ${expires}):\n${setupURL}\n\nIf you did not request an account, you can ignore this email.`,
-    html: `<p>Dear ${escapeHTML(name)},</p><p>Your request for an Oddtopsy Reports editorial account has been approved.</p><p><a href="${setupURL}">Set up your account</a> (link valid until ${expires}).</p><p>If you did not request an account, you can ignore this email.</p>`,
-  })
+export async function notifyStaffOfAccessRequest(payload: Payload, request: AccessRequest) {
+  return deliver(
+    payload,
+    'access_request.received',
+    () => getStaffEmails(payload, ['manager', 'admin']),
+    `Access request: ${request.name}`,
+    {
+      preheader: `${request.name} has asked for an editorial account.`,
+      heading: 'New editorial access request',
+      paragraphs: ['Someone has asked for an editorial account on Oddtopsy Reports. Managers and admins can approve or reject it.'],
+      details: [
+        { label: 'Name', value: request.name },
+        { label: 'Email', value: request.email },
+        { label: 'Affiliation', value: request.affiliation },
+        { label: 'Requested', value: formatDate(request.createdAt) },
+      ],
+      action: { label: 'Review the request', url: `${siteURL}/editorial/users` },
+    },
+  )
 }
+
+export async function notifyStaffOfSubmission(payload: Payload, submission: Submission) {
+  return deliver(
+    payload,
+    'submission.received',
+    () => getStaffEmails(payload, staffRoles),
+    `New submission: ${submission.title}`,
+    {
+      preheader: `"${submission.title}" was submitted for review.`,
+      heading: 'New manuscript submitted',
+      paragraphs: ['A new paper has been submitted and is waiting for editorial review.'],
+      details: [
+        { label: 'Title', value: submission.title },
+        { label: 'Corresponding author', value: submission.correspondingAuthor?.name },
+        { label: 'Lead author', value: submission.leadAuthor?.name },
+        { label: 'Format', value: submission.submissionType === 'editor' ? 'Written in the editor' : 'PDF upload' },
+        { label: 'Submitted', value: formatDate(submission.createdAt) },
+      ],
+      action: { label: 'Open in Editorial', url: `${siteURL}/editorial/submissions/${submission.id}` },
+    },
+  )
+}
+
+export async function notifyStaffOfResubmission(payload: Payload, submission: Submission) {
+  return deliver(
+    payload,
+    'submission.resubmitted',
+    () => getStaffEmails(payload, staffRoles),
+    `Revised submission: ${submission.title}`,
+    {
+      preheader: `The author has resubmitted "${submission.title}".`,
+      heading: 'Revised manuscript submitted',
+      paragraphs: ['The corresponding author has submitted their revisions. The paper is now Under Review.'],
+      details: [
+        { label: 'Title', value: submission.title },
+        { label: 'Corresponding author', value: submission.correspondingAuthor?.name },
+      ],
+      action: { label: 'Review the revision', url: `${siteURL}/editorial/submissions/${submission.id}` },
+    },
+  )
+}
+
+/*
+ * Author and applicant messages
+ */
 
 export async function sendRevisionRequest(
   payload: Payload,
@@ -93,23 +213,59 @@ export async function sendRevisionRequest(
   expiresAt: Date,
 ) {
   const author = submission.correspondingAuthor
-  const expires = expiresAt.toLocaleDateString('en-US', { dateStyle: 'long' })
 
-  await send(payload, 'revision request', {
-    to: author.email,
-    subject: `Revisions requested: ${submission.title}`,
-    text: `Dear ${author.name},\n\nThe editors of Oddtopsy Reports have requested revisions to "${submission.title}".\n\n${message}\n\nYou can review the request and update your submission here (link valid until ${expires}):\n${revisionURL}\n\nThis link is personal to you; please do not share it.`,
-    html: `<p>Dear ${escapeHTML(author.name)},</p><p>The editors of Oddtopsy Reports have requested revisions to <strong>${escapeHTML(submission.title)}</strong>.</p>${paragraphs(message)}<p><a href="${revisionURL}">Review the request and update your submission</a> (link valid until ${expires}).</p><p>This link is personal to you; please do not share it.</p>`,
+  return deliver(payload, 'submission.revision_requested', [author.email], `Revisions requested: ${submission.title}`, {
+    preheader: `The editors have requested revisions to "${submission.title}".`,
+    heading: 'Revisions requested',
+    greeting: `Dear ${author.name},`,
+    paragraphs: [
+      `Thank you for submitting "${submission.title}" to Oddtopsy Reports. The editors have reviewed it and are asking for some revisions before it can move forward.`,
+    ],
+    quote: { label: "The editors' request", text: message },
+    action: { label: 'Revise your submission', url: revisionURL },
+    closing: [
+      `This link is personal to you and works until ${formatDate(expiresAt)}, or until you resubmit. Please don't forward it.`,
+      'If you have questions, reply to this email.',
+    ],
   })
 }
 
-export async function notifyStaffOfResubmission(payload: Payload, submission: Submission) {
-  const reviewURL = `${siteURL}/editorial/submissions/${submission.id}`
-
-  await send(payload, 'revision resubmitted', {
-    to: await getStaffEmails(payload, ['editor', 'manager', 'admin']),
-    subject: `Revised submission: ${submission.title}`,
-    text: `${submission.correspondingAuthor.name} has resubmitted "${submission.title}" after revisions. It is now Under Review.\n\nReview it: ${reviewURL}`,
-    html: `<p>${escapeHTML(submission.correspondingAuthor.name)} has resubmitted <strong>${escapeHTML(submission.title)}</strong> after revisions. It is now Under Review.</p><p><a href="${reviewURL}">Review it</a></p>`,
+export async function notifyApplicantOfRejection(payload: Payload, request: AccessRequest) {
+  // The reviewer's note is an internal record and is deliberately not included.
+  return deliver(payload, 'access_request.rejected', [request.email], 'Your Oddtopsy Reports access request', {
+    preheader: 'An update on your request for an editorial account.',
+    heading: 'About your access request',
+    greeting: `Dear ${request.name},`,
+    paragraphs: [
+      'Thank you for your interest in joining the Oddtopsy Reports editorial team. After review, we are not able to approve an editorial account at this time.',
+      'Editorial accounts are limited to the journal’s editors and reviewers. You do not need an account to submit a paper; anyone can submit through the Submit page.',
+    ],
+    action: { label: 'Submit a paper', url: `${siteURL}/submit` },
+    closing: ['If you believe this was a mistake, reply to this email.'],
   })
+}
+
+/*
+ * Set-password invite for Payload password sign-in (local development).
+ * Production uses Cognito's own invitation. Throws on failure so the
+ * caller can record it against the access request and retry.
+ */
+export async function sendAccountInvite(payload: Payload, user: User, setupURL: string, expiresAt: Date) {
+  const name = user.profile?.displayName || user.email
+
+  return deliver(
+    payload,
+    'account.invite',
+    [user.email],
+    'Set up your Oddtopsy Reports account',
+    {
+      preheader: 'Your editorial access was approved. Set your password to get started.',
+      heading: 'Your editorial account is ready',
+      greeting: `Dear ${name},`,
+      paragraphs: ['Your request for an Oddtopsy Reports editorial account has been approved. Choose a password to finish setting it up.'],
+      action: { label: 'Set up your account', url: setupURL },
+      closing: [`This link works until ${formatDate(expiresAt)}.`, 'If you did not request an account, you can ignore this email.'],
+    },
+    { throwOnFailure: true },
+  )
 }
