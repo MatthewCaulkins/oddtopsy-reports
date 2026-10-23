@@ -90,6 +90,10 @@ docker push "$image"
 read -r digest media_type < <(aws_ ecr describe-images --repository-name "$REPOSITORY" \
   --image-ids "imageTag=$tag" --query 'imageDetails[0].[imageDigest,imageManifestMediaType]' --output text)
 
+# The AWS CLI on Windows ends lines with \r.
+digest="${digest%$'\r'}"
+media_type="${media_type%$'\r'}"
+
 case "$media_type" in
   application/vnd.oci.image.manifest.v1+json | application/vnd.docker.distribution.manifest.v2+json) ;;
   *) fail "Pushed $image as '$media_type', not a single image manifest. Do not deploy it by digest." ;;
