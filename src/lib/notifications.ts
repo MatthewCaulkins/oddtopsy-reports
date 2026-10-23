@@ -25,8 +25,11 @@ export type NotificationEvent =
   | 'access_request.rejected'
   | 'account.invite'
   | 'submission.received'
+  | 'submission.receipt'
   | 'submission.revision_requested'
   | 'submission.resubmitted'
+  | 'submission.published'
+  | 'submission.published.staff'
 
 export type DeliveryResult = {
   event: NotificationEvent
@@ -49,6 +52,16 @@ export async function getStaffEmails(payload: Payload, roles: Role[]) {
   })
 
   return [...new Set(staff.docs.map((user) => user.email).filter(Boolean))]
+}
+
+/*
+ * Staff recipients minus whoever caused the event; nobody is told about
+ * their own action.
+ */
+async function staffExcept(payload: Payload, roles: Role[], actor?: { email?: string | null } | null) {
+  const actorEmail = actor?.email?.toLowerCase()
+
+  return (await getStaffEmails(payload, roles)).filter((email) => email.toLowerCase() !== actorEmail)
 }
 
 function errorSummary(error: unknown) {
@@ -201,9 +214,67 @@ export async function notifyStaffOfResubmission(payload: Payload, submission: Su
   )
 }
 
+export async function notifyStaffOfPublication(
+  payload: Payload,
+  submission: Submission,
+  articleURL: string,
+  actor: { email?: string | null } | null,
+) {
+  return deliver(
+    payload,
+    'submission.published.staff',
+    () => staffExcept(payload, staffRoles, actor),
+    `Published: ${submission.title}`,
+    {
+      preheader: `"${submission.title}" is now live on Oddtopsy Reports.`,
+      heading: 'Paper published',
+      paragraphs: ['A paper has been approved and published on the site.'],
+      details: [
+        { label: 'Title', value: submission.title },
+        { label: 'Corresponding author', value: submission.correspondingAuthor?.name },
+      ],
+      action: { label: 'View the article', url: articleURL },
+    },
+  )
+}
+
 /*
  * Author and applicant messages
  */
+
+export async function sendSubmissionReceipt(payload: Payload, submission: Submission) {
+  const author = submission.correspondingAuthor
+
+  return deliver(payload, 'submission.receipt', [author.email], `Submission received: ${submission.title}`, {
+    preheader: `We've received "${submission.title}".`,
+    heading: 'We received your submission',
+    greeting: `Dear ${author.name},`,
+    paragraphs: [
+      `Thank you for submitting "${submission.title}" to Oddtopsy Reports. The editorial team will review it and contact you at this address if they need anything.`,
+      'You do not need to do anything else for now.',
+    ],
+    details: [
+      { label: 'Title', value: submission.title },
+      { label: 'Received', value: formatDate(submission.createdAt) },
+    ],
+    closing: ['If you have questions, reply to this email.'],
+  })
+}
+
+export async function notifyAuthorOfPublication(payload: Payload, submission: Submission, articleURL: string) {
+  const author = submission.correspondingAuthor
+
+  return deliver(payload, 'submission.published', [author.email], `Published: ${submission.title}`, {
+    preheader: `"${submission.title}" has been published on Oddtopsy Reports.`,
+    heading: 'Your paper has been published',
+    greeting: `Dear ${author.name},`,
+    paragraphs: [
+      `Congratulations! The editors have approved "${submission.title}", and it is now published on Oddtopsy Reports.`,
+    ],
+    action: { label: 'View your article', url: articleURL },
+    closing: ['Thank you for contributing to Oddtopsy Reports.'],
+  })
+}
 
 export async function sendRevisionRequest(
   payload: Payload,

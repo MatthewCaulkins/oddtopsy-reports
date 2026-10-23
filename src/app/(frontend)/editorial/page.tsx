@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
+import { currentPath, signInURL } from '@/lib/auth/returnTo'
 
 import { Header } from '@/app/(frontend)/components/Header'
 import { Footer } from '@/app/(frontend)/components/Footer'
@@ -18,7 +19,7 @@ export default async function EditorialDashboardPage() {
   })
 
   if (!user) {
-    redirect('/login')
+    redirect(signInURL(currentPath(headers)))
   }
 
   const canEdit = hasRole(user, 'editor')

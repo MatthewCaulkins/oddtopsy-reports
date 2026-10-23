@@ -2,7 +2,7 @@ import { Header } from '@/app/(frontend)/components/Header'
 import { Footer } from '@/app/(frontend)/components/Footer'
 import { EditorialNav } from '../../components/EditorialNav'
 
-import { canManageUser, rolesGrantableBy, type Role } from '@/access/roles'
+import { canManageUser, hasRole, rolesGrantableBy, type Role } from '@/access/roles'
 import type { AccessRequest, User } from '@/payload-types'
 import { getAuthConfig } from '@/lib/auth/config'
 import { requireRole } from '@/lib/requireRole'
@@ -190,23 +190,18 @@ export default async function EditorialUsersPage() {
             const canManage = canManageUser(user, item)
 
             return (
-              <article key={item.id} className="editorial-user-row">
-                <div>
-                  <strong>{item.profile?.displayName || item.email}</strong>
-
-                  <p>{item.email}</p>
-
-                  <UserAccountControls
-                    key={`${item.id}-${item.role}-${item.accountStatus}`}
-                    userID={item.id}
-                    initialRole={item.role}
-                    initialStatus={item.accountStatus}
-                    canManage={canManage}
-                    grantableRoles={grantableRoles}
-                    needsSignInInvite={cognitoEnabled && !item.cognitoSub}
-                  />
-                </div>
-              </article>
+              <UserAccountControls
+                key={`${item.id}-${item.role}-${item.accountStatus}`}
+                userID={item.id}
+                name={item.profile?.displayName || item.email}
+                email={item.email}
+                initialRole={item.role}
+                initialStatus={item.accountStatus}
+                canManage={canManage}
+                canDelete={canManage && hasRole(user, 'admin')}
+                grantableRoles={grantableRoles}
+                needsSignInInvite={cognitoEnabled && !item.cognitoSub}
+              />
             )
           })}
         </div>

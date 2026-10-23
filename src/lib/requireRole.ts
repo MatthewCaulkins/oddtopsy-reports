@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 
 import config from '@/payload.config'
 import { hasRole, type Role } from '@/access/roles'
+import { currentPath, signInURL } from '@/lib/auth/returnTo'
 
 /*
  * Server-side guard for server actions and pages.
@@ -17,7 +18,8 @@ export async function requireRole(minimum: Role) {
   const { user } = await payload.auth({ headers })
 
   if (!user) {
-    redirect('/login')
+    // Come back here after signing in.
+    redirect(signInURL(currentPath(headers)))
   }
 
   if (!hasRole(user, minimum)) {

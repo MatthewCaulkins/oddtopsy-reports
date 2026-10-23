@@ -32,6 +32,14 @@ const brand = {
   border: '#d9e1e4',
 }
 
+/*
+ * The site icon as a PNG (many clients block SVG), served publicly from
+ * the site. With images blocked, the alt text shows in brand colour and
+ * the name beside it still reads correctly.
+ */
+const siteURL = (process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '')
+const logoURL = /^https:\/\//.test(siteURL) ? `${siteURL}/branding/icon.png` : ''
+
 function escapeHTML(value: string) {
   return value
     .replaceAll('&', '&amp;')
@@ -70,8 +78,15 @@ export function renderEmail(content: EmailContent): RenderedEmail {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${brand.background};">
 <tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:${brand.surface};border:1px solid ${brand.border};border-radius:12px;font-family:Georgia,'Times New Roman',serif;">
-<tr><td style="padding:20px 28px;border-bottom:3px solid ${brand.accent};">
-<span style="font-size:20px;font-weight:bold;letter-spacing:0.5px;color:${brand.accent};">${brand.name}</span>
+<tr><td style="padding:18px 28px;border-bottom:3px solid ${brand.accent};">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr>
+${
+  logoURL
+    ? `<td style="padding-right:12px;vertical-align:middle;"><img src="${escapeHTML(logoURL)}" width="36" height="37" alt="Oddtopsy logo" style="display:block;width:36px;height:37px;border:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${brand.accent};" /></td>`
+    : ''
+}
+<td style="vertical-align:middle;"><span style="font-size:20px;font-weight:bold;letter-spacing:0.5px;color:${brand.accent};">${brand.name}</span></td>
+</tr></table>
 </td></tr>
 <tr><td style="padding:28px;font-family:Arial,Helvetica,sans-serif;">
 <h1 style="margin:0 0 20px;font-size:22px;line-height:1.3;color:${brand.text};">${escapeHTML(content.heading)}</h1>

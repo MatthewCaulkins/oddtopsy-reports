@@ -1,19 +1,19 @@
-import type { CollectionConfig, PayloadRequest } from 'payload'
+import { APIError, type CollectionConfig, type PayloadRequest } from 'payload'
 
 import { canAssignRole, canSetAccountStatus, hasRole } from '@/access/roles'
 import { assertAnotherActiveAdmin } from '@/lib/auth/adminGuard'
 import { getAuthConfig } from '@/lib/auth/config'
-import { disableCognitoUser, enableCognitoUser } from '@/lib/auth/cognitoAdmin'
+import { deleteCognitoUser, disableCognitoUser, enableCognitoUser } from '@/lib/auth/cognitoAdmin'
 import { cognitoStrategy } from '@/lib/auth/cognitoStrategy'
 import type { User } from '@/payload-types'
 
 const authConfig = getAuthConfig()
 
 /*
- * Keeps the linked Cognito account in step when Payload disables,
- * re-enables or deletes someone. Payload stays authoritative (the
- * Cognito strategy refuses disabled users regardless), so a failure
- * here is logged rather than blocking the change.
+ * Keeps the linked Cognito account in step when Payload disables or
+ * re-enables someone. Payload stays authoritative (the Cognito strategy
+ * refuses disabled users regardless), so a failure here is logged
+ * rather than blocking the change. Deletion is stricter; see beforeDelete.
  */
 async function syncCognitoAccount(req: PayloadRequest, user: User, action: 'disable' | 'enable') {
   if (!authConfig.cognito || !user.cognitoSub) return
@@ -112,11 +112,30 @@ export const Users: CollectionConfig = {
         if (user.role === 'admin' && user.accountStatus === 'active') {
           await assertAnotherActiveAdmin(req, id, 'delete')
         }
-      },
-    ],
-    afterDelete: [
-      async ({ doc, req }) => {
-        await syncCognitoAccount(req, doc as User, 'disable')
+
+        /*
+         * Delete the Cognito account first, by its stored sub (never an
+         * email lookup). If Cognito refuses, the whole delete is cancelled
+         * and nothing changes. If the Payload delete then fails, it rolls
+         * back and a retry finds the Cognito account already gone.
+         * This hook covers every path: the Users page and Payload Admin.
+         */
+        if (authConfig.cognito && user.cognitoSub) {
+          try {
+            const outcome = await deleteCognitoUser(authConfig.cognito, user.cognitoSub)
+
+            req.payload.logger.info({ event: 'account.deleted.cognito', userID: user.id, outcome }, 'Cognito account removed')
+          } catch (error) {
+            req.payload.logger.error({ event: 'account.delete_failed', userID: user.id, err: error }, 'Cognito account could not be deleted')
+
+            throw new APIError(
+              `The Cognito sign-in for this account could not be deleted (${error instanceof Error ? error.name : 'error'}), so nothing was deleted. Try again, or disable the account instead.`,
+              502,
+              null,
+              true,
+            )
+          }
+        }
       },
     ],
     beforeLogin: [

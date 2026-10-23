@@ -1,5 +1,6 @@
 import {
   AdminCreateUserCommand,
+  AdminDeleteUserCommand,
   AdminDisableUserCommand,
   AdminEnableUserCommand,
   AdminUserGlobalSignOutCommand,
@@ -11,7 +12,8 @@ import type { CognitoConfig } from '@/lib/auth/config'
 /*
  * Server-side Cognito user management, using the ECS task role
  * (see deploy/aws/iam/oddtopsy-ecs-task-role-cognito-policy.json).
- * Cognito accounts are never deleted from the app.
+ * Cognito accounts are deleted only when an admin deletes the Payload
+ * user (see the Users collection's beforeDelete hook).
  *
  * The pool signs in with email, so a user is created with their email
  * as the username and afterwards addressed by their immutable sub.
@@ -79,6 +81,23 @@ export async function disableCognitoUser(config: CognitoConfig, sub: string) {
   await getClient(config).send(
     new AdminUserGlobalSignOutCommand({ UserPoolId: config.userPoolId, Username: sub }),
   )
+}
+
+/*
+ * Permanently deletes the Cognito user with this sub. A user that is
+ * already gone (an earlier attempt, or removed in the console) counts as
+ * deleted, so a retry after a partial failure completes cleanly.
+ */
+export async function deleteCognitoUser(config: CognitoConfig, sub: string): Promise<'deleted' | 'already_deleted'> {
+  try {
+    await getClient(config).send(new AdminDeleteUserCommand({ UserPoolId: config.userPoolId, Username: sub }))
+
+    return 'deleted'
+  } catch (error) {
+    if (error instanceof Error && error.name === 'UserNotFoundException') return 'already_deleted'
+
+    throw error
+  }
 }
 
 export async function enableCognitoUser(config: CognitoConfig, sub: string) {

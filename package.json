@@ -19,7 +19,8 @@
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
     "seed:focus-areas": "tsx src/scripts/seedFocusAreas.ts",
     "seed:site-content": "tsx src/scripts/seedSiteContent.ts",
-    "create:admin": "tsx src/scripts/createAdmin.ts"
+    "create:admin": "tsx src/scripts/createAdmin.ts",
+    "test:smoke": "node tests/smoke/smoke.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.1156.0",

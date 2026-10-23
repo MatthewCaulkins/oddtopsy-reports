@@ -6,7 +6,7 @@ import { getPayload } from 'payload'
 
 import config from '@/payload.config'
 import { createPublicSubmission, SubmissionError } from '@/lib/submissions'
-import { notifyStaffOfSubmission } from '@/lib/notifications'
+import { notifyStaffOfSubmission, sendSubmissionReceipt } from '@/lib/notifications'
 
 export type SubmitPaperResult = { error: string; field?: string } | void
 
@@ -34,7 +34,10 @@ export async function submitPaper(formData: FormData): Promise<SubmitPaperResult
   if (!result.duplicate) {
     const { submission } = result
 
-    after(() => notifyStaffOfSubmission(payload, submission))
+    after(async () => {
+      await notifyStaffOfSubmission(payload, submission)
+      await sendSubmissionReceipt(payload, submission)
+    })
   }
 
   redirect('/submit/thank-you')

@@ -67,3 +67,7 @@ node_modules/
 
 # IAM policies are attached by hand in the AWS console; kept out of Git.
 /deploy/aws/iam/
+
+# Smoke test fixtures and screenshots (generated)
+/tests/smoke/.fixtures/
+/tests/smoke/.output/

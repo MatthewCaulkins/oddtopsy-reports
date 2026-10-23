@@ -2613,6 +2613,39 @@ select:focus {
   border-bottom-color: #9f3a38;
 }
 
+/* Floated to the far right of the ribbon. */
+.editorial-nav a.editorial-nav-return {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.editorial-nav a.editorial-nav-return::before {
+  content: '← ';
+}
+
+@media (max-width: 720px) {
+  /* Keep the ribbon on one line and let it scroll sideways. */
+  .editorial-nav-inner {
+    width: 100%;
+    padding: 0 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .editorial-nav a {
+    padding: 0.8rem 0.85rem;
+    white-space: nowrap;
+  }
+}
+
+/* The profile menu's label for the section you are in. */
+.user-menu-current {
+  padding: 0.625rem var(--space-3);
+  color: var(--color-text-muted);
+  font-weight: 700;
+  cursor: default;
+}
+
 .editorial-page-header {
   margin-top: 2rem;
 }
@@ -2650,6 +2683,66 @@ select:focus {
 
 .editorial-user-row:last-child {
   border-bottom: 0;
+}
+
+.editorial-user-identity {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Right-hand column: role controls and actions on one line. */
+.editorial-user-row > .editorial-user-actions {
+  justify-content: flex-end;
+}
+
+/* Confirmation and messages span both columns, under the row. */
+.editorial-user-delete,
+.editorial-user-message {
+  grid-column: 1 / -1;
+}
+
+.editorial-user-delete {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-danger-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-danger-softer);
+}
+
+.editorial-user-delete label {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.editorial-user-delete input {
+  max-width: 28rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+}
+
+.button.button-danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.button.primary.button-danger {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  /* Stack: identity first, then the actions, which wrap. */
+  .editorial-user-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .editorial-user-row > .editorial-user-actions {
+    justify-content: flex-start;
+  }
 }
 
 .editorial-user-row p {

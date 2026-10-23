@@ -274,7 +274,7 @@ export interface Submission {
   title: string;
   subtitle?: string | null;
   /**
-   * Used for the public paper URL once published.
+   * The public URL (/articles/<slug>). Set automatically from the title when first published and kept after that, so links do not break. Lowercase words separated by hyphens.
    */
   slug?: string | null;
   abstract: string;

@@ -2,9 +2,10 @@ import { headers as getHeaders } from 'next/headers'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { NavLinks } from './NavLinks'
-import { LogoutButton } from '@/components/LogoutButton'
+import { UserMenuLinks } from './UserMenuLinks'
 import { hasRole } from '@/access/roles'
 import { getAuthConfig } from '@/lib/auth/config'
+import { signInURL } from '@/lib/auth/returnTo'
 
 function getInitials(email?: string | null) {
   if (!email) return 'U'
@@ -27,8 +28,9 @@ export async function Header() {
 
   const isAdmin = hasRole(user, 'admin')
 
+  // After signing in, staff land on the home page and can choose Editorial from the menu.
   const { password } = getAuthConfig()
-  const signInHref = password ? '/login' : '/auth/login?next=/editorial'
+  const signInHref = signInURL('/')
 
   return (
     <header className="site-header">
@@ -42,13 +44,7 @@ export async function Header() {
             <details className="user-menu">
               <summary>{getInitials(user.email)}</summary>
 
-              <div className="user-menu-panel">
-                {canUseEditorial && <a href="/editorial">Editorial</a>}
-
-                {isAdmin && <a href="/admin">Admin Panel</a>}
-
-                <LogoutButton className="user-menu-logout" />
-              </div>
+              <UserMenuLinks canUseEditorial={canUseEditorial} isAdmin={isAdmin} />
             </details>
           ) : (
             <>

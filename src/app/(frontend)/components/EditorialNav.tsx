@@ -33,6 +33,10 @@ export function EditorialNav({ user, active }: Props) {
         <a href="/editorial/trash" className={active === 'trash' ? 'is-active' : undefined}>
           Trash
         </a>
+
+        <a href="/" className="editorial-nav-return">
+          Return to Frontend
+        </a>
       </div>
     </nav>
   )

@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
+import { signInURL } from '@/lib/auth/returnTo'
 import { hasRole } from '@/access/roles'
 
 async function requireEditor() {
@@ -17,7 +18,7 @@ async function requireEditor() {
   })
 
   if (!user) {
-    redirect('/login')
+    redirect(signInURL('/editorial/trash'))
   }
 
   if (!hasRole(user, 'editor')) {

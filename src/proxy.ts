@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { getAuthConfig } from '@/lib/auth/config'
+import { pathnameHeader } from '@/lib/auth/returnTo'
 import {
   cognitoCookieOptions,
   expiresWithin,
@@ -11,22 +12,29 @@ import {
 } from '@/lib/auth/cognito'
 
 /*
- * Keeps Cognito sessions alive. Server-rendered pages cannot set
- * cookies, so the ID token is refreshed here, before the request
- * reaches the app, and handed to both this request and the browser.
- * Does nothing unless Cognito sign-in is enabled and the visitor has
- * a Cognito session.
+ * Runs before every page and API request.
+ *
+ * 1. Passes the requested path to the app (server components cannot read
+ *    it otherwise), so sign-in can return people to the protected page
+ *    they asked for.
+ * 2. Keeps Cognito sessions alive: server-rendered pages cannot set
+ *    cookies, so the ID token is refreshed here, before the request
+ *    reaches the app, and handed to both this request and the browser.
  */
 export async function proxy(request: NextRequest) {
-  const cognito = getAuthConfig().cognito
+  // Never trust a client-supplied value for this header.
+  request.headers.set(pathnameHeader, request.nextUrl.pathname + request.nextUrl.search)
 
+  const next = () => NextResponse.next({ request: { headers: request.headers } })
+
+  const cognito = getAuthConfig().cognito
   const refreshToken = request.cookies.get(refreshTokenCookie)?.value
 
-  if (!cognito || !refreshToken) return NextResponse.next()
+  if (!cognito || !refreshToken) return next()
 
   const idToken = request.cookies.get(idTokenCookie)?.value
 
-  if (idToken && !expiresWithin(idToken, 60)) return NextResponse.next()
+  if (idToken && !expiresWithin(idToken, 60)) return next()
 
   try {
     const tokens = await refreshIdToken(cognito, refreshToken)
@@ -34,7 +42,7 @@ export async function proxy(request: NextRequest) {
     // Let this request see the fresh token too.
     request.cookies.set(idTokenCookie, tokens.id_token)
 
-    const response = NextResponse.next({ request: { headers: request.headers } })
+    const response = next()
 
     response.cookies.set(idTokenCookie, tokens.id_token, { ...cognitoCookieOptions, maxAge: sessionMaxAge })
 
@@ -52,7 +60,7 @@ export async function proxy(request: NextRequest) {
     request.cookies.delete(idTokenCookie)
     request.cookies.delete(refreshTokenCookie)
 
-    const response = NextResponse.next({ request: { headers: request.headers } })
+    const response = next()
 
     response.cookies.delete(idTokenCookie)
     response.cookies.delete(refreshTokenCookie)

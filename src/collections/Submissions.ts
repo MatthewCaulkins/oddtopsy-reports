@@ -9,6 +9,7 @@ import {
   syncMediaAudience,
 } from '@/lib/mediaVisibility'
 import { clearedRevisionAccess } from '@/lib/revisionAccess'
+import { isValidSlug, uniqueSlug } from '@/lib/slugs'
 
 type SubmissionSiblingData = {
   submissionType?: 'upload' | 'editor'
@@ -47,6 +48,16 @@ export const Submissions: CollectionConfig = {
 
   hooks: {
     beforeChange: [
+      // A paper gets its permanent URL the first time it is published.
+      async ({ data, originalDoc, req }) => {
+        if (data.workflowStatus === 'published' && !data.slug && !originalDoc?.slug) {
+          const title = data.title || originalDoc?.title || 'article'
+
+          return { ...data, slug: await uniqueSlug(req.payload, title, { excludeID: originalDoc?.id, req }) }
+        }
+
+        return data
+      },
       ({ data, originalDoc }) => {
         // Any move out of Revision Requested ends the author's revision link.
         if (
@@ -107,7 +118,15 @@ export const Submissions: CollectionConfig = {
       type: 'text',
       unique: true,
       admin: {
-        description: 'Used for the public paper URL once published.',
+        description:
+          'The public URL (/articles/<slug>). Set automatically from the title when first published and kept after that, so links do not break. Lowercase words separated by hyphens.',
+      },
+      validate: (value: unknown) => {
+        if (value === null || value === undefined || value === '') return true
+
+        return typeof value === 'string' && isValidSlug(value)
+          ? true
+          : 'Use lowercase letters, numbers and hyphens (not only numbers).'
       },
     },
     {

@@ -8,7 +8,13 @@ import type { Submission } from '@/payload-types'
 import { requireRole } from '@/lib/requireRole'
 import { buildSubmissionUpdate } from '@/lib/submissionUpdate'
 import { createRevisionToken } from '@/lib/revisionAccess'
-import { sendRevisionRequest, siteURL } from '@/lib/notifications'
+import {
+  notifyAuthorOfPublication,
+  notifyStaffOfPublication,
+  sendRevisionRequest,
+  siteURL,
+} from '@/lib/notifications'
+import { articlePath } from '@/lib/slugs'
 import { isUnpublishStatus } from '@/lib/workflow'
 import {
   getVersionChanges,
@@ -203,8 +209,14 @@ export async function restoreSubmissionVersion(formData: FormData) {
   redirect(`/editorial/submissions/${submissionId}/history?restored=1`)
 }
 
+/*
+ * Approves and publishes a paper. Publishing assigns its permanent URL
+ * slug (Submissions beforeChange). Only a real transition to Published
+ * notifies anyone: approving an already-published paper (a double-click
+ * or a repeat) does nothing.
+ */
 export async function approveSubmission(formData: FormData) {
-  const { payload } = await requireRole('editor')
+  const { payload, user } = await requireRole('editor')
   const id = String(formData.get('id') || '')
 
   if (!id) {
@@ -217,7 +229,11 @@ export async function approveSubmission(formData: FormData) {
     depth: 0,
   })
 
-  await payload.update({
+  if (submission.workflowStatus === 'published') {
+    redirect(articlePath(submission))
+  }
+
+  const published = await payload.update({
     collection: 'submissions',
     id,
     data: {
@@ -226,12 +242,20 @@ export async function approveSubmission(formData: FormData) {
     },
   })
 
+  const articleURL = `${siteURL}${articlePath(published)}`
+
+  // Saved; tell the author and the rest of the editorial team after the response.
+  after(async () => {
+    await notifyAuthorOfPublication(payload, published, articleURL)
+    await notifyStaffOfPublication(payload, published, articleURL, user)
+  })
+
   revalidatePath('/')
   revalidatePath('/articles')
-  //   revalidatePath(`/articles/${submission.slug || id}`)
+  revalidatePath(articlePath(published))
   revalidatePath(`/editorial/submissions/${id}`)
 
-  redirect(`/articles/${submission.slug || id}`)
+  redirect(articlePath(published))
 }
 
 export async function updateSubmission(formData: FormData) {
@@ -385,7 +409,7 @@ export async function unpublishSubmission(formData: FormData) {
 
   revalidatePath('/')
   revalidatePath('/articles')
-  revalidatePath(`/articles/${submission.slug || id}`)
+  revalidatePath(articlePath(submission))
   revalidatePath(`/editorial/submissions/${id}`)
 
   redirect(`/editorial/submissions/${id}?mode=preview`)

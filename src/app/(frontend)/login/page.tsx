@@ -5,10 +5,12 @@ import { LoginForm } from './LoginForm'
 import { redirect } from 'next/navigation'
 
 import { getAuthConfig } from '@/lib/auth/config'
+import { safeNextPath } from '@/lib/auth/cognito'
 
 type Props = {
   searchParams: Promise<{
     error?: string
+    next?: string
   }>
 }
 
@@ -19,12 +21,15 @@ const errorMessages: Record<string, string> = {
 }
 
 export default async function LoginPage({ searchParams }: Props) {
-  const { error } = await searchParams
+  const { error, next: rawNext } = await searchParams
+  // Back to the protected page that sent them here, otherwise home.
+  const next = safeNextPath(rawNext)
+  const cognitoSignIn = `/auth/login?next=${encodeURIComponent(next)}`
   const { password, cognito } = getAuthConfig()
 
   // Cognito-only: nothing to choose here, so go straight to Cognito
   // (unless we are showing why the last sign-in didn't work).
-  if (!password && !error) redirect('/auth/login?next=/editorial')
+  if (!password && !error) redirect(cognitoSignIn)
 
   return (
     <main className="site">
@@ -38,7 +43,7 @@ export default async function LoginPage({ searchParams }: Props) {
 
         {cognito && (
           <div className="login-buttons">
-            <a className="button primary" href="/auth/login?next=/editorial">
+            <a className="button primary" href={cognitoSignIn}>
               Sign In
             </a>
             <a className="button secondary" href="/request-access">
@@ -52,10 +57,10 @@ export default async function LoginPage({ searchParams }: Props) {
             // Transition only: remove with AUTH_PROVIDERS=cognito.
             <details className="legacy-login">
               <summary>Legacy login (email and password)</summary>
-              <LoginForm />
+              <LoginForm next={next} />
             </details>
           ) : (
-            <LoginForm />
+            <LoginForm next={next} />
           ))}
       </section>
       <Footer />

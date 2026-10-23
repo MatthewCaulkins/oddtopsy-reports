@@ -6,6 +6,7 @@ import { after } from 'next/server'
 
 import {
   canAssignRole,
+  canManageUser,
   canSetAccountStatus,
   isAssignableRole,
   isRole,
@@ -150,6 +151,43 @@ export async function resendUserInvite(id: number): Promise<UserActionResult> {
     revalidatePath('/editorial/users')
 
     return { ok: true, message: 'Invite sent.' }
+  } catch (error) {
+    return failure(error)
+  }
+}
+
+/*
+ * Permanently deletes an account so its email can be used again for a
+ * fresh Request Access. Admin-only, never yourself, and the admin must
+ * type the account's email to confirm. The Users collection's
+ * beforeDelete hook protects the last active admin and deletes the
+ * Cognito sign-in (by sub) before the Payload user is removed.
+ *
+ * History is kept: editor notes, review decisions and trash records
+ * stay, attributed to "a former user". Disabling is the reversible
+ * alternative.
+ */
+export async function deleteUserAccount(id: number, confirmEmail: string): Promise<UserActionResult> {
+  try {
+    const { payload, user } = await requireRole('admin')
+
+    const target = await payload.findByID({ collection: 'users', id, depth: 0 })
+
+    if (!canManageUser(user, target)) {
+      return { ok: false, error: 'You cannot delete this account.' }
+    }
+
+    if (confirmEmail.trim().toLowerCase() !== target.email.toLowerCase()) {
+      return { ok: false, error: 'Type the account’s email address exactly to confirm.' }
+    }
+
+    await payload.delete({ collection: 'users', id })
+
+    payload.logger.info({ event: 'account.deleted', userID: id, by: user.id }, 'User account deleted')
+
+    revalidatePath('/editorial/users')
+
+    return { ok: true, message: 'Account deleted.' }
   } catch (error) {
     return failure(error)
   }

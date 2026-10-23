@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 
-export function LoginForm() {
+// `next` is already a safe same-site path (validated by the login page).
+export function LoginForm({ next = '/' }: { next?: string }) {
   const [error, setError] = useState('')
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -28,7 +29,7 @@ export function LoginForm() {
       return
     }
 
-    window.location.href = '/'
+    window.location.href = next
   }
 
   return (
