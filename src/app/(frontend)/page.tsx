@@ -65,32 +65,6 @@ export default async function HomePage() {
     <main className="site">
       <Header />
 
-      {/* <section className="hero">
-        <div className="hero-wrapper">
-          <div className="hero-image">
-            <img src="/branding/hero.png" alt="Oddtopsy Reports" width={500} height={500} />
-          </div>
-          <div className="hero-copy">
-            <div className="hero-brand">
-              <h1>Oddtopsy</h1>
-
-              <div className="hero-report-label">REPORTS</div>
-
-              <p className="hero-tagline">Cadaveric Studies & Anatomical Variations</p>
-            </div>
-
-            <div className="hero-actions">
-              <a href="/submit" className="button primary">
-                Submit Paper
-              </a>
-
-              <a href="/subscribe" className="button secondary">
-                Subscribe
-              </a>
-            </div>
-          </div>
-        </div>
-      </section> */}
       <section className="hero">
         <div className="hero-brand">
           <h1>Oddtopsy</h1>
