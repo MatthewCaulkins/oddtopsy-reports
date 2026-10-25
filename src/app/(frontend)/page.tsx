@@ -3,6 +3,7 @@ import { headers as getHeaders } from 'next/headers'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
+import { subscriptionsEnabled } from '@/lib/features'
 
 import { PaperCard } from './components/PaperCard'
 import { PaperCarousel } from './components/PaperCarousel'
@@ -106,9 +107,11 @@ export default async function HomePage() {
             Submit Paper
           </a>
 
-          <a href="/subscribe" className="button secondary">
-            Subscribe
-          </a>
+          {subscriptionsEnabled() && (
+            <a href="/subscribe" className="button secondary">
+              Subscribe
+            </a>
+          )}
         </div>
       </section>
       {user && editorialQueue && (

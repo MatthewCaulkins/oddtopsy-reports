@@ -230,6 +230,21 @@ try {
     check('Header shows Request Access when logged out', (await page.locator('a.nav-request-access').count()) === 1)
     const r = await status(anon, 'GET', '/signup')
     check('/signup redirects to /request-access', [307, 308].includes(r.status()) && r.headers()['location']?.endsWith('/request-access'), `HTTP ${r.status()} -> ${r.headers()['location']}`)
+
+    // Subscriptions are off (SUBSCRIPTIONS_ENABLED unset): no entry points, no page, not in the sitemap.
+    const subscribeLinks = []
+    for (const path of ['/', '/articles', '/about', '/submit']) {
+      await page.goto(`${BASE}${path}`)
+      subscribeLinks.push(...(await page.locator('a[href="/subscribe"]').evaluateAll((links) => links.map((link) => link.textContent))))
+    }
+    check('No Subscribe links in the header, footer or pages', subscribeLinks.length === 0, subscribeLinks.join(', '))
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`${BASE}/`)
+    check('No Subscribe link in the mobile navigation', (await page.locator('a[href="/subscribe"]').count()) === 0)
+    const subscribe = await status(anon, 'GET', '/subscribe')
+    check('/subscribe returns 404', subscribe.status() === 404, `HTTP ${subscribe.status()}`)
+    const sitemap = await (await status(anon, 'GET', '/sitemap.xml')).text()
+    check('The sitemap leaves out /subscribe', sitemap.includes('/articles</loc>') && !sitemap.includes('/subscribe'))
     await anon.close()
   }
 
@@ -371,6 +386,15 @@ try {
   await manager.page.goto(`${BASE}/admin`)
   await manager.page.waitForLoadState('networkidle')
   check('Manager is denied Payload admin', /unauthorized|login/.test(manager.page.url()), manager.page.url())
+  r = await status(manager.context, 'GET', '/subscribe')
+  check('/subscribe is 404 for signed-in staff too', r.status() === 404, `HTTP ${r.status()}`)
+  await manager.page.goto(`${BASE}/editorial/pages/subscribe`)
+  check(
+    'Staff can still edit the Subscribe page content, with no link to the hidden page',
+    manager.page.url().endsWith('/editorial/pages/subscribe') &&
+      (await manager.page.getByRole('link', { name: 'View Published' }).count()) === 0,
+    manager.page.url(),
+  )
 
   // ------------------------------------- admin powers and auth routes (password-only mode)
   {

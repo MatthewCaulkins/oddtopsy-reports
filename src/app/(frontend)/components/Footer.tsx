@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import { subscriptionsEnabled } from '@/lib/features'
+
 export function Footer() {
   return (
     <footer className="site-footer">
@@ -9,7 +11,7 @@ export function Footer() {
           <a href="/articles">Papers</a>
           <a href="/submit">Submit</a>
           <a href="/about">About</a>
-          <a href="/subscribe">Subscribe</a>
+          {subscriptionsEnabled() && <a href="/subscribe">Subscribe</a>}
         </div>
 
         <div className="footer-brand">

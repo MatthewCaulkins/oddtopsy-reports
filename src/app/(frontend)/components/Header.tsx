@@ -6,6 +6,7 @@ import { UserMenuLinks } from './UserMenuLinks'
 import { hasRole } from '@/access/roles'
 import { getAuthConfig } from '@/lib/auth/config'
 import { signInURL } from '@/lib/auth/returnTo'
+import { subscriptionsEnabled } from '@/lib/features'
 
 function getInitials(email?: string | null) {
   if (!email) return 'U'
@@ -38,7 +39,7 @@ export async function Header() {
         <a href="/" className="site-logo" aria-label="Oddtopsy Reports" />
 
         <nav className="site-nav">
-          <NavLinks />
+          <NavLinks showSubscribe={subscriptionsEnabled()} />
 
           {user ? (
             <details className="user-menu">

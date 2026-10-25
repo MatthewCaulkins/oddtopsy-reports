@@ -33,13 +33,15 @@ function getEditorialParent(pathname: string) {
   return null
 }
 
-export function NavLinks() {
+// The flag comes from the server (Header): the environment isn't readable here.
+export function NavLinks({ showSubscribe = false }: { showSubscribe?: boolean }) {
   const pathname = usePathname()
   const editorialParent = getEditorialParent(pathname)
+  const items = showSubscribe ? navItems : navItems.filter((item) => item.href !== '/subscribe')
 
   return (
     <>
-      {navItems.map((item) => {
+      {items.map((item) => {
         const isDirectActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
 
         const isEditorialChild = editorialParent === item.href

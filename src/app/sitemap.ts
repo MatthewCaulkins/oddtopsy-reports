@@ -3,13 +3,18 @@ import { getPayload } from 'payload'
 
 import config from '@/payload.config'
 import { publishedPaperWhere } from '@/access/visibility'
+import { subscriptionsEnabled } from '@/lib/features'
 import { siteURL } from '@/lib/notifications'
 import { articlePath } from '@/lib/slugs'
 
 // Built per request: the database is not available while the image is built.
 export const dynamic = 'force-dynamic'
 
-const publicPages = ['/', '/articles', '/about', '/submit', '/subscribe']
+const publicPages = ['/', '/articles', '/about', '/submit']
+
+function listedPages() {
+  return subscriptionsEnabled() ? [...publicPages, '/subscribe'] : publicPages
+}
 
 /*
  * Public pages and every published article at its canonical slug URL.
@@ -27,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   })
 
   return [
-    ...publicPages.map((path) => ({ url: `${siteURL}${path}` })),
+    ...listedPages().map((path) => ({ url: `${siteURL}${path}` })),
     ...papers.docs.map((paper) => ({
       url: `${siteURL}${articlePath(paper)}`,
       lastModified: paper.updatedAt,

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { requireRole } from '@/lib/requireRole'
+import { subscriptionsEnabled } from '@/lib/features'
 
 import { Header } from '@/app/(frontend)/components/Header'
 import { Footer } from '@/app/(frontend)/components/Footer'
@@ -108,7 +109,9 @@ export default async function EditorialPage({ params, searchParams }: Props) {
         mode={mode}
         previewHref={`/editorial/pages/${rawPage}?mode=preview`}
         editHref={`/editorial/pages/${rawPage}?mode=edit`}
-        publishedHref={configForPage.publicHref}
+        publishedHref={
+          rawPage === 'subscribe' && !subscriptionsEnabled() ? undefined : configForPage.publicHref
+        }
       />
 
       {mode === 'edit' ? (

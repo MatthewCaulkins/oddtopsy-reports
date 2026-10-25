@@ -328,3 +328,37 @@ describe('editorial decisions', () => {
     expect([...underReview.calls.updates, ...published.calls.updates, ...trashed.calls.updates]).toEqual([])
   })
 })
+
+describe('subscriptions switch', () => {
+  afterEach(() => {
+    delete process.env.SUBSCRIPTIONS_ENABLED
+    vi.doUnmock('payload')
+  })
+
+  it('is off unless SUBSCRIPTIONS_ENABLED is exactly "true"', async () => {
+    const { subscriptionsEnabled } = await import('@/lib/features')
+
+    for (const value of [undefined, '', 'false', '1', 'TRUE', 'yes']) {
+      if (value === undefined) delete process.env.SUBSCRIPTIONS_ENABLED
+      else process.env.SUBSCRIPTIONS_ENABLED = value
+      expect(subscriptionsEnabled()).toBe(false)
+    }
+
+    process.env.SUBSCRIPTIONS_ENABLED = 'true'
+    expect(subscriptionsEnabled()).toBe(true)
+  })
+
+  it('leaves /subscribe out of the sitemap while off, and lists it when on', async () => {
+    vi.doMock('payload', async (importOriginal) => ({
+      ...(await importOriginal<typeof import('payload')>()),
+      getPayload: async () => ({ find: async () => ({ docs: [] }) }),
+    }))
+    const { default: sitemap } = await import('@/app/sitemap')
+    const paths = async () => (await sitemap()).map((entry) => new URL(entry.url).pathname)
+
+    expect(await paths()).toEqual(['/', '/articles', '/about', '/submit'])
+
+    process.env.SUBSCRIPTIONS_ENABLED = 'true'
+    expect(await paths()).toContain('/subscribe')
+  })
+})

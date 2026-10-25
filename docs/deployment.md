@@ -39,6 +39,8 @@ DB_HOST / DB_PORT / DB_NAME, DB_USER / DB_PASSWORD (secret)
 PAYLOAD_SECRET (secret)
 ```
 
+`SUBSCRIPTIONS_ENABLED` is not set, so subscriptions are off: Subscribe is hidden and `/subscribe` returns 404 (see `src/lib/features.ts`). Setting it to `true` in a new task definition revision turns them on without a rebuild.
+
 The Cognito app client allows only the callback `https://oddtopsies.org/auth/callback` and sign-out URL `https://oddtopsies.org/`.
 
 ## Release steps
