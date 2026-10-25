@@ -5,7 +5,7 @@ import type { Submission } from '@/payload-types'
 
 /*
  * Offline tests for article slugs, sign-in return paths, publication
- * notifications and Cognito account deletion.
+ * notifications, editorial decisions and Cognito account deletion.
  */
 
 process.env.SITE_URL = 'https://oddtopsies.example'
@@ -157,6 +157,29 @@ describe('publication and receipt notifications', () => {
     expect(sent[0]).toMatchObject({ to: 'author@example.org', subject: 'Submission received: Rare Finding' })
   })
 
+  it('tells the author their paper is accepted, with the editors’ comments if any', async () => {
+    const { notifyAuthorOfDecision } = await import('@/lib/notifications')
+    const { payload, sent } = fakePayload([])
+
+    await notifyAuthorOfDecision(payload as never, submission, 'accepted')
+    await notifyAuthorOfDecision(payload as never, submission, 'accepted', 'Lovely images.')
+
+    expect(sent[0]).toMatchObject({ to: 'author@example.org', subject: 'Accepted: Rare Finding' })
+    expect(sent[0].text).not.toContain('comments')
+    expect(sent[1].text).toContain('Lovely images.')
+  })
+
+  it('tells the author about a rejection with the editors’ explanation', async () => {
+    const { notifyAuthorOfDecision } = await import('@/lib/notifications')
+    const { payload, sent } = fakePayload([])
+
+    await notifyAuthorOfDecision(payload as never, submission, 'rejected', 'Outside the journal’s scope.')
+
+    expect(sent[0]).toMatchObject({ to: 'author@example.org', subject: 'Decision on your submission: Rare Finding' })
+    expect(sent[0].text).toContain('not able to accept')
+    expect(sent[0].text).toContain('Outside the journal’s scope.')
+  })
+
   it('shows the logo, with alt text for blocked images, beside the name', async () => {
     const { renderEmail } = await import('@/lib/email/template')
     const { html } = renderEmail({ preheader: 'p', heading: 'h' })
@@ -207,5 +230,101 @@ describe('Cognito account deletion', () => {
     })
 
     await expect(deleteCognitoUser(config, 'sub-123')).rejects.toThrow(/not authorized/)
+  })
+})
+
+describe('editorial decisions', () => {
+  afterEach(() => {
+    vi.doUnmock('@/lib/requireRole')
+    vi.doUnmock('@/lib/notifications')
+    vi.doUnmock('next/navigation')
+    vi.doUnmock('next/server')
+    vi.doUnmock('next/cache')
+  })
+
+  async function load(status: string, { trashed = false } = {}) {
+    const calls = { notes: [] as unknown[], updates: [] as unknown[], emails: [] as unknown[], after: 0 }
+
+    const payload = {
+      findByID: vi.fn(async () => ({ id: 7, title: 'Rare Finding', workflowStatus: status, trashed })),
+      create: vi.fn(async ({ data }: { data: unknown }) => calls.notes.push(data)),
+      update: vi.fn(async ({ data }: { data: { workflowStatus: string } }) => {
+        calls.updates.push(data)
+        return { id: 7, title: 'Rare Finding', workflowStatus: data.workflowStatus }
+      }),
+    }
+
+    vi.doMock('@/lib/requireRole', () => ({ requireRole: async () => ({ payload, user: { id: 1 } }) }))
+    vi.doMock('@/lib/notifications', () => ({
+      siteURL: 'https://oddtopsies.example',
+      notifyAuthorOfDecision: vi.fn(async (...args: unknown[]) => calls.emails.push(args.slice(2))),
+      notifyAuthorOfPublication: vi.fn(),
+      notifyStaffOfPublication: vi.fn(),
+      sendRevisionRequest: vi.fn(),
+    }))
+    vi.doMock('next/navigation', () => ({
+      redirect: (url: string) => {
+        throw Object.assign(new Error(`redirect ${url}`), { url })
+      },
+    }))
+    vi.doMock('next/server', () => ({
+      after: async (callback: () => Promise<unknown>) => {
+        calls.after++
+        await callback()
+      },
+    }))
+    vi.doMock('next/cache', () => ({ revalidatePath: vi.fn() }))
+
+    const { recordDecision } = await import('@/app/(frontend)/editorial/submissions/[id]/actions')
+
+    return { recordDecision, calls }
+  }
+
+  function form(decision: string, message = '') {
+    const data = new FormData()
+    data.set('id', '7')
+    data.set('decision', decision)
+    data.set('message', message)
+    return data
+  }
+
+  it('records the decision as a note, moves the paper and emails the author once', async () => {
+    const { recordDecision, calls } = await load('under_review')
+
+    await expect(recordDecision(form('accepted', 'Lovely images.'))).rejects.toThrow(
+      'redirect /editorial/submissions/7?mode=preview&decision=accepted',
+    )
+
+    expect(calls.notes).toEqual([
+      { submission: 7, createdBy: 1, noteType: 'decision', note: 'Accepted: Lovely images.' },
+    ])
+    expect(calls.updates).toEqual([{ workflowStatus: 'accepted' }])
+    expect(calls.emails).toEqual([['accepted', 'Lovely images.']])
+  })
+
+  it('does nothing when the decision matches the current status', async () => {
+    const { recordDecision, calls } = await load('rejected')
+
+    await expect(recordDecision(form('rejected', 'Again.'))).rejects.toThrow('redirect /editorial/submissions/7?mode=preview')
+
+    expect(calls.notes).toEqual([])
+    expect(calls.updates).toEqual([])
+    expect(calls.after).toBe(0)
+  })
+
+  it('requires a message to reject, and refuses published or trashed papers', async () => {
+    const underReview = await load('under_review')
+    await expect(underReview.recordDecision(form('rejected'))).rejects.toThrow(/include a message/)
+    await expect(underReview.recordDecision(form('published'))).rejects.toThrow(/Accept or Reject/)
+
+    vi.resetModules()
+    const published = await load('published')
+    await expect(published.recordDecision(form('rejected', 'No.'))).rejects.toThrow(/Unpublish this paper/)
+
+    vi.resetModules()
+    const trashed = await load('under_review', { trashed: true })
+    await expect(trashed.recordDecision(form('accepted'))).rejects.toThrow(/trash/)
+
+    expect([...underReview.calls.updates, ...published.calls.updates, ...trashed.calls.updates]).toEqual([])
   })
 })

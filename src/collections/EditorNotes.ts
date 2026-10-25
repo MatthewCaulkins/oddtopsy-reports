@@ -50,6 +50,7 @@ export const EditorNotes: CollectionConfig = {
       options: [
         { label: 'Internal Note', value: 'internal' },
         { label: 'Revision Request', value: 'revision_request' },
+        { label: 'Editorial Decision', value: 'decision' },
         { label: 'Publication Note', value: 'publication_note' },
       ],
     },

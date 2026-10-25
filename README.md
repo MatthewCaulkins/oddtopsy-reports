@@ -44,7 +44,7 @@ Oddtopsy Reports was designed as a lightweight alternative to traditional academ
 - Request Access workflow: applicants ask for an account; managers and admins approve (Editor or Manager) or reject
 - Roles: Editor, Manager, Admin, each with an account status (Invited, Active, Disabled)
 - Shared editorial queue, preview and edit modes, version history
-- Request Revisions, Approve & Publish, Unpublish, Trash
+- Request Revisions, Record Decision (Accept / Reject, emailed to the author), Approve & Publish, Unpublish, Trash
 - User management: approve, change roles, disable, resend invites, delete (admins)
 - Email notifications for every workflow step (see [docs/notifications.md](docs/notifications.md))
 
@@ -151,7 +151,7 @@ Submitted (anonymous author)
     ↓
 Under Review / In Progress
     ↓  ⇄  Revision Requested → author revises via private link → Under Review
-Accepted
+Accepted  /  Rejected   (Record Decision; the author is emailed)
     ↓
 Published  ⇄  Unpublished (back to a chosen status)
 ```
@@ -170,7 +170,6 @@ Production runs on AWS (ECS Fargate, RDS PostgreSQL, S3, SES, Cognito). See [doc
 
 See [docs/ROADMAP.md](docs/ROADMAP.md). Next candidates:
 
-- Editorial decision step (Accept / Reject) with author notification
 - Search, filters, pagination
 - Author profiles, DOI support
 - Subscriptions and gated papers (visibility rules are already centralized in `src/access/visibility.ts`)

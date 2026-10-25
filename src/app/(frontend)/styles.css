@@ -2909,6 +2909,27 @@ select:focus {
   resize: vertical;
 }
 
+.editorial-toolbar-decision {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.editorial-toolbar-decision legend {
+  margin-bottom: var(--space-2);
+  font-weight: 700;
+}
+
+.editorial-toolbar-panel-body .editorial-toolbar-decision label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 400;
+}
+
 .editorial-toolbar-hint {
   margin: 0;
   color: var(--color-text-muted);

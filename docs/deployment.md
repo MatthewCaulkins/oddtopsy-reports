@@ -58,6 +58,32 @@ Use the `oddtopsy` AWS profile. In Git Bash set `MSYS_NO_PATHCONV=1` (for `/ecs/
 
 Rollback: update the service to the previous revision. Database changes roll back with `payload migrate:down` or by restoring the snapshot to a new instance.
 
-## Known infrastructure follow-up
+## DNS: moving to Route 53
 
-`oddtopsies.org` (the apex) is served by A records that point at the load balancer's current IP addresses, because Squarespace DNS cannot alias the apex to a load balancer name. Load-balancer IPs change without notice, which would take the apex offline (`www` is a CNAME and is unaffected). See the options in the release notes; the durable fixes are Route 53 DNS (alias records) or static IPs via AWS Global Accelerator.
+Squarespace DNS cannot alias the apex (`oddtopsies.org`) to the load balancer, so it uses A records with the load balancer's current IPs, which AWS changes without notice. The fix is to host DNS in Route 53, where the apex is an alias to the load balancer. Squarespace stays the registrar; only the nameservers change.
+
+The records to recreate are in [`deploy/aws/dns/oddtopsies.org-records.json`](../deploy/aws/dns/oddtopsies.org-records.json) (copied from Squarespace on 2026-10-23):
+
+- the apex alias, `www` and `auth`
+- SPF, plus a single DMARC record (Squarespace had two conflicting ones; the stricter one is kept)
+- the 3 SES DKIM CNAMEs and the 3 ACM validation CNAMEs
+- Squarespace's `_domainconnect`
+
+There are no MX records: the domain receives no mail.
+
+**Status (2026-10-25):** hosted zone `Z01082401CFKXG0W0E1CJ` was created and the records loaded and verified on all four nameservers (`ns-1566.awsdns-03.co.uk`, `ns-302.awsdns-37.com`, `ns-1287.awsdns-32.org`, `ns-532.awsdns-02.net`). Steps 1–3 below are done. The nameserver switch (step 4) is waiting for approval.
+
+**Email authentication.** App email and Cognito email (`EmailSendingAccount: DEVELOPER`) both go through the SES identity `oddtopsies.org`, which signs with Easy DKIM (`d=oddtopsies.org`). There is no custom MAIL FROM domain, so the envelope sender is an `amazonses.com` address, and SPF is checked (and passes) against Amazon's domain, not ours. DMARC therefore passes through strict DKIM alignment alone. This makes `v=spf1 -all` on the apex correct: nothing sends with `oddtopsies.org` as its envelope domain. If a custom MAIL FROM (e.g. `mail.oddtopsies.org`) is added later, that subdomain needs its own MX record and `v=spf1 include:amazonses.com -all`; the apex record stays as it is.
+
+1. **Create** a public hosted zone `oddtopsies.org` (console, Route 53). Note its ID and its 4 nameservers.
+2. **Load the records**: `aws route53 change-resource-record-sets --hosted-zone-id <id> --change-batch file://deploy/aws/dns/oddtopsies.org-records.json`.
+3. **Check them before switching**: query one of the new nameservers directly for every name in the file, for example `dig @ns-123.awsdns-45.com oddtopsies.org A` (or use `nslookup`). Then compare against the Squarespace DNS panel for anything this file missed.
+4. **Switch nameservers** in Squarespace (Domains → oddtopsies.org → DNS → Nameservers → use custom nameservers) to the 4 Route 53 nameservers. Squarespace's own DNS records stop being used from then on.
+5. **Verify after propagation** (minutes to a few hours; old NS records are cached up to 48 hours):
+   - `https://oddtopsies.org`, `https://www.oddtopsies.org` and `https://auth.oddtopsies.org` load
+   - SES DKIM shows *Successful*
+   - the ACM certificates still show *Issued* and *In use*
+
+Rollback: switch the nameservers back to Squarespace's defaults (`nsa1`–`nsa4.squarespacedns.com`). The old records stay in Squarespace until deleted.
+
+After the move, change DNS records in Route 53, not Squarespace.

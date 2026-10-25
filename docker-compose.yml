@@ -33,9 +33,9 @@ services:
     ports:
       - '5432:5432'
     environment:
-      POSTGRES_DB: oddtopsy_reports
-      POSTGRES_USER: oddtopsy
-      POSTGRES_PASSWORD: 0ddTopsy
+      POSTGRES_DB: ${POSTGRES_DB:-oddtopsy_reports}
+      POSTGRES_USER: ${POSTGRES_USER:-oddtopsy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
 

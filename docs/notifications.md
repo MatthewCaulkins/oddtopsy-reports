@@ -26,10 +26,12 @@ account emails.
 | Submission receipt | Visitor submits a paper | Corresponding author | n/a | Submission received: *title* | none | Per-form submission key | Implemented, tested |
 | Revisions requested | Editor sends Request Revisions | Corresponding author | n/a | Revisions requested: *title* | Private `/revise/…` link (60 days) | Same message within 2 minutes is ignored | Implemented, tested |
 | Revision resubmitted | Author submits via link | Active editors, managers, admins | n/a (author) | Revised submission: *title* | `/editorial/submissions/:id` | Link is spent on resubmit | Implemented, tested |
+| Accepted | Editor records the decision Accept | Corresponding author (with the editors' message, if any) | n/a | Accepted: *title* | none | Only when the status changes; repeating the current decision does nothing | Implemented, tested |
+| Rejected | Editor records the decision Reject (message required) | Corresponding author (with the editors' message) | n/a | Decision on your submission: *title* | none | Only when the status changes | Implemented, tested |
 | Published | Editor uses Approve & Publish | Corresponding author | n/a | Published: *title* | `/articles/:slug` | Only on a transition to Published | Implemented, tested |
 | Published (team notice) | Editor uses Approve & Publish | Active editors, managers, admins | **Yes** | Published: *title* | `/articles/:slug` | Only on a transition to Published | Implemented, tested |
 | Unpublished | Editor unpublishes | nobody | n/a | n/a | n/a | n/a | Not sent (deliberate: internal) |
-| Status changes in Payload Admin (accepted, rejected, in progress, under review) | Admin edits the status field | nobody | n/a | n/a | n/a | n/a | **Not implemented**; candidates below |
+| Status changes in Payload Admin | Admin edits the status field directly | nobody | n/a | n/a | n/a | n/a | Not sent (deliberate: use Record Decision to notify the author) |
 | Account disabled / re-enabled / role changed / deleted | Admin/manager on the Users page | nobody | n/a | n/a | n/a | n/a | Not sent (deliberate) |
 | Sign-in code (MFA) | Cognito sign-in | That user | n/a | Your Oddtopsy Reports sign-in code | none | Cognito | Cognito (console template) |
 | Password reset / verification code | Cognito "Forgot password" | That user | n/a | Your Oddtopsy Reports verification code | none | Cognito | Cognito (console template) |
@@ -37,10 +39,6 @@ account emails.
 
 ## Candidates for later
 
-- **Editorial decision to the author** (Accepted / Rejected). There is no
-  decision step in the editorial UI yet; status is only changed in
-  Payload Admin. Adding one should send the author a decision email and
-  move the paper on, with the same "only on a real transition" guard.
 - **Unpublished notice to the author**, if unpublishing ever needs to be
   explained to them.
 - **Daily digest for staff** instead of one email per submission, if

@@ -21,6 +21,18 @@ export const unpublishStatuses = ['in_progress', 'under_review', 'accepted', 're
 
 export type UnpublishStatus = (typeof unpublishStatuses)[number]
 
+/*
+ * Editorial decisions. Accepting is separate from publishing: an
+ * accepted paper is published later with Approve & Publish.
+ */
+export const decisionStatuses = ['accepted', 'rejected'] as const
+
+export type DecisionStatus = (typeof decisionStatuses)[number]
+
+export function isDecisionStatus(value: unknown): value is DecisionStatus {
+  return decisionStatuses.includes(value as DecisionStatus)
+}
+
 export function isUnpublishStatus(value: unknown): value is UnpublishStatus {
   return unpublishStatuses.includes(value as UnpublishStatus)
 }

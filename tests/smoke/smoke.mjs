@@ -61,7 +61,7 @@ const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 async function waitFor(predicate, timeoutMs = 15_000) {
   const end = Date.now() + timeoutMs
   while (Date.now() < end) {
-    if (predicate()) return true
+    if (await predicate()) return true
     await pause(500)
   }
   return predicate()
@@ -459,10 +459,12 @@ try {
     await confirmButton.click()
     // The page refresh may replace the "deleted" row before we see it; wait for the outcome instead.
     await waitFor(() => sql(`select count(*) from users where email = '${INVITEE}'`) === '0', 60_000)
-    await smokeAdmin.page.waitForLoadState('networkidle')
     check(
       'The deleted account leaves the Users list',
-      (await smokeAdmin.page.locator('article.editorial-user-row:not(.is-deleted)', { hasText: INVITEE }).filter({ hasText: 'Invited' }).count()) === 0,
+      await waitFor(
+        async () =>
+          (await smokeAdmin.page.locator('article.editorial-user-row:not(.is-deleted)', { hasText: INVITEE }).filter({ hasText: 'Invited' }).count()) === 0,
+      ),
     )
     check(
       'Admin deletes the account; its access-request history is kept',
@@ -598,9 +600,10 @@ try {
 
   since = now()
   await editor.page.goto(`${BASE}/editorial/submissions/${submissionID}`)
-  await editor.page.locator('.editorial-toolbar-panel summary').click()
-  await editor.page.fill('textarea[name=message]', 'Please replace the featured image and clarify the title.')
-  await editor.page.getByRole('button', { name: 'Send to Author' }).click()
+  const revisionPanel = editor.page.locator('.editorial-toolbar-panel', { hasText: 'Request Revisions' })
+  await revisionPanel.locator('summary').click()
+  await revisionPanel.locator('textarea[name=message]').fill('Please replace the featured image and clarify the title.')
+  await revisionPanel.getByRole('button', { name: 'Send to Author' }).click()
   await editor.page.waitForURL(/revisions=sent/)
   logs = logsSince(since)
   const revisionToken = logs.match(/\/revise\/([A-Za-z0-9_-]{20,})/)?.[1]
@@ -617,6 +620,30 @@ try {
   await authorPage.waitForURL(/submitted=1/)
   check('Author resubmits through the link', sql(`select workflow_status from submissions where id = ${submissionID}`) === 'under_review')
   check('Resubmission email reaches the new editor', /To: [^\n]*smoke-editor@example\.com[^\n]*Subject: Revised submission/.test(logsSince(since)))
+
+  // Editorial decision: Accept, then publish separately.
+  await editor.page.goto(`${BASE}/editorial/submissions/${submissionID}`)
+  since = now()
+  const decisionPanel = editor.page.locator('.editorial-toolbar-panel', { hasText: 'Record Decision' })
+  await decisionPanel.locator('summary').click()
+  await decisionPanel.getByLabel('Accept').check()
+  await decisionPanel.locator('textarea[name=message]').fill('Accepted with thanks for the clear images.')
+  await decisionPanel.getByRole('button', { name: 'Record & Notify Author' }).click()
+  await editor.page.waitForURL(/decision=accepted/)
+  check(
+    'Accepting records the decision and moves the paper to Accepted',
+    sql(`select workflow_status from submissions where id = ${submissionID}`) === 'accepted' &&
+      sql(`select note from editor_notes where submission_id = ${submissionID} and note_type = 'decision'`) ===
+        'Accepted: Accepted with thanks for the clear images.',
+  )
+  check(
+    'The author is emailed the acceptance',
+    await waitFor(() => logsSince(since).includes(`To: ${AUTHOR}, Subject: Accepted: SMOKE TEST (revised)`)),
+  )
+  check(
+    'An accepted paper is only offered Reject next',
+    (await decisionPanel.getByLabel('Accept').count()) === 0 && (await decisionPanel.getByLabel('Reject').count()) === 1,
+  )
 
   const newFeatured = sql(`select filename from media where alt = '${TITLE} (revised) featured image' order by id desc limit 1`)
   await editor.page.goto(`${BASE}/editorial/submissions/${submissionID}`)

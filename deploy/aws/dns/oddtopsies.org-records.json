@@ -1,0 +1,116 @@
+{
+  "Comment": "oddtopsies.org: records copied from Squarespace DNS; apex becomes an alias to the load balancer",
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "oddtopsies.org.",
+        "Type": "A",
+        "AliasTarget": {
+          "HostedZoneId": "Z35SXDOTRQ7X7K",
+          "DNSName": "dualstack.oddtopsy-alb-813783379.us-east-1.elb.amazonaws.com.",
+          "EvaluateTargetHealth": false
+        }
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "oddtopsies.org.",
+        "Type": "TXT",
+        "TTL": 3600,
+        "ResourceRecords": [{ "Value": "\"v=spf1 -all\"" }]
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "_dmarc.oddtopsies.org.",
+        "Type": "TXT",
+        "TTL": 3600,
+        "ResourceRecords": [{ "Value": "\"v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s\"" }]
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "www.oddtopsies.org.",
+        "Type": "CNAME",
+        "TTL": 300,
+        "ResourceRecords": [{ "Value": "oddtopsy-alb-813783379.us-east-1.elb.amazonaws.com" }]
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "auth.oddtopsies.org.",
+        "Type": "CNAME",
+        "TTL": 300,
+        "ResourceRecords": [{ "Value": "d2j5ye3r43w67i.cloudfront.net" }]
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "bh42ndgo5yt3eu33r4en3dpwece26mhj._domainkey.oddtopsies.org.",
+        "Type": "CNAME",
+        "TTL": 3600,
+        "ResourceRecords": [{ "Value": "bh42ndgo5yt3eu33r4en3dpwece26mhj.dkim.amazonses.com" }]
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "wfmf3rdy5qqlcqqtxr64f3ocdfmtfeig._domainkey.oddtopsies.org.",
+        "Type": "CNAME",
+        "TTL": 3600,
+        "ResourceRecords": [{ "Value": "wfmf3rdy5qqlcqqtxr64f3ocdfmtfeig.dkim.amazonses.com" }]
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "onqr4hn6ovf7a2yngs5nrvmpuc3cvmsg._domainkey.oddtopsies.org.",
+        "Type": "CNAME",
+        "TTL": 3600,
+        "ResourceRecords": [{ "Value": "onqr4hn6ovf7a2yngs5nrvmpuc3cvmsg.dkim.amazonses.com" }]
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "_abaa848c6ef69dd63f31e0bea51bb0e9.oddtopsies.org.",
+        "Type": "CNAME",
+        "TTL": 3600,
+        "ResourceRecords": [{ "Value": "_a77905ec119be7e8a8411f766e836da5.wzccmgtwzk.acm-validations.aws" }]
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "_77e30c9ed18981bedd207de1ed25ee27.www.oddtopsies.org.",
+        "Type": "CNAME",
+        "TTL": 3600,
+        "ResourceRecords": [{ "Value": "_726dc3a37235cd899745ad62159d1fc0.wzccmgtwzk.acm-validations.aws" }]
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "_40c6fe5f22cf1fbbd95f8474394dbd4d.auth.oddtopsies.org.",
+        "Type": "CNAME",
+        "TTL": 3600,
+        "ResourceRecords": [{ "Value": "_366f68a2482d8f616092a0c3fcd2c1a5.wzccmgtwzk.acm-validations.aws" }]
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "_domainconnect.oddtopsies.org.",
+        "Type": "CNAME",
+        "TTL": 3600,
+        "ResourceRecords": [{ "Value": "_domainconnect.domains.squarespace.com" }]
+      }
+    }
+  ]
+}

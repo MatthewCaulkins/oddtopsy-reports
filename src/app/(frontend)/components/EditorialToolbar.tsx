@@ -2,7 +2,12 @@
 
 import { useFormStatus } from 'react-dom'
 
-import { unpublishStatuses, workflowStatusLabels, type WorkflowStatus } from '@/lib/workflow'
+import {
+  decisionStatuses,
+  unpublishStatuses,
+  workflowStatusLabels,
+  type WorkflowStatus,
+} from '@/lib/workflow'
 
 type EditorialToolbarProps = {
   mode: 'preview' | 'edit'
@@ -12,6 +17,7 @@ type EditorialToolbarProps = {
   authorEmail?: string
 
   revisionAction?: (formData: FormData) => void | Promise<void>
+  decisionAction?: (formData: FormData) => void | Promise<void>
   unpublishAction?: (formData: FormData) => void | Promise<void>
 
   previewHref: string
@@ -73,6 +79,16 @@ function RevisionButton() {
   )
 }
 
+function DecisionButton() {
+  const { pending } = useFormStatus()
+
+  return (
+    <button className="button primary" type="submit" disabled={pending}>
+      {pending ? 'Sending…' : 'Record & Notify Author'}
+    </button>
+  )
+}
+
 function UnpublishButton() {
   const { pending } = useFormStatus()
 
@@ -101,6 +117,7 @@ export function EditorialToolbar({
   authorEmail,
 
   revisionAction,
+  decisionAction,
   unpublishAction,
 
   previewHref,
@@ -124,6 +141,10 @@ export function EditorialToolbar({
   const hasTrashID = trashId !== undefined && trashId !== null
 
   const hasSubmissionID = submissionId !== undefined && submissionId !== null
+
+  // A decision can't repeat the current status, and published papers are unpublished first.
+  const decisionOptions = decisionStatuses.filter((option) => option !== status)
+  const canDecide = Boolean(decisionAction) && hasSubmissionID && status !== 'published'
 
   return (
     <section className="editorial-toolbar">
@@ -189,6 +210,45 @@ export function EditorialToolbar({
                   </p>
 
                   <RevisionButton />
+                </form>
+              </details>
+            )}
+
+            {canDecide && (
+              <details className="editorial-toolbar-panel">
+                <summary className="button secondary">Record Decision</summary>
+
+                <form action={decisionAction} className="editorial-toolbar-panel-body">
+                  <input type="hidden" name="id" value={submissionId} />
+
+                  <fieldset className="editorial-toolbar-decision">
+                    <legend>Decision</legend>
+
+                    {decisionOptions.map((option, index) => (
+                      <label key={option}>
+                        <input
+                          type="radio"
+                          name="decision"
+                          value={option}
+                          defaultChecked={index === 0}
+                          required
+                        />
+                        {option === 'accepted' ? 'Accept' : 'Reject'}
+                      </label>
+                    ))}
+                  </fieldset>
+
+                  <label>
+                    Message to {authorEmail || 'the corresponding author'}
+                    <textarea name="message" rows={6} />
+                  </label>
+
+                  <p className="editorial-toolbar-hint">
+                    The author is emailed the decision with this message. A message is required when
+                    rejecting. Accepted papers are published separately with Approve &amp; Publish.
+                  </p>
+
+                  <DecisionButton />
                 </form>
               </details>
             )}

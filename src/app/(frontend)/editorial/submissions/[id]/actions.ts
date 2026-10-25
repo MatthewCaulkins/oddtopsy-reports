@@ -9,13 +9,14 @@ import { requireRole } from '@/lib/requireRole'
 import { buildSubmissionUpdate } from '@/lib/submissionUpdate'
 import { createRevisionToken } from '@/lib/revisionAccess'
 import {
+  notifyAuthorOfDecision,
   notifyAuthorOfPublication,
   notifyStaffOfPublication,
   sendRevisionRequest,
   siteURL,
 } from '@/lib/notifications'
 import { articlePath } from '@/lib/slugs'
-import { isUnpublishStatus } from '@/lib/workflow'
+import { isDecisionStatus, isUnpublishStatus, workflowStatusLabels } from '@/lib/workflow'
 import {
   getVersionChanges,
   trackedVersionFields,
@@ -372,6 +373,72 @@ export async function requestRevisions(formData: FormData) {
   revalidatePath(`/editorial/submissions/${id}`)
 
   redirect(`/editorial/submissions/${id}?mode=preview&revisions=sent`)
+}
+
+/*
+ * Records the editors' decision (Accept or Reject) as a decision note,
+ * moves the paper to that status and emails the author. Only a real
+ * change emails anyone: repeating the current decision does nothing.
+ * Published papers are unpublished first; a decision ends any open
+ * revision link (Submissions beforeChange).
+ */
+export async function recordDecision(formData: FormData) {
+  const { payload, user } = await requireRole('editor')
+
+  const id = getSubmissionID(formData)
+  const decision = formData.get('decision')
+  const message = String(formData.get('message') || '').trim()
+
+  if (!isDecisionStatus(decision)) {
+    throw new Error('Choose Accept or Reject.')
+  }
+
+  if (decision === 'rejected' && !message) {
+    throw new Error('Please include a message to the author explaining the decision.')
+  }
+
+  const submission = await payload.findByID({
+    collection: 'submissions',
+    id,
+    depth: 0,
+  })
+
+  if (submission.trashed) {
+    throw new Error('Restore this submission from the trash first.')
+  }
+
+  if (submission.workflowStatus === 'published') {
+    throw new Error('Unpublish this paper before recording a decision.')
+  }
+
+  if (submission.workflowStatus === decision) {
+    redirect(`/editorial/submissions/${id}?mode=preview`)
+  }
+
+  await payload.create({
+    collection: 'editor-notes',
+    data: {
+      submission: id,
+      createdBy: user.id,
+      noteType: 'decision',
+      note: `${workflowStatusLabels[decision]}${message ? `: ${message}` : ''}`,
+    },
+  })
+
+  const updated = await payload.update({
+    collection: 'submissions',
+    id,
+    data: {
+      workflowStatus: decision,
+    },
+  })
+
+  // Saved; email the author after the response so delivery can't affect it.
+  after(() => notifyAuthorOfDecision(payload, updated, decision, message || undefined))
+
+  revalidatePath(`/editorial/submissions/${id}`)
+
+  redirect(`/editorial/submissions/${id}?mode=preview&decision=${decision}`)
 }
 
 /*

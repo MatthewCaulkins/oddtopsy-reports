@@ -260,7 +260,7 @@ export interface EditorNote {
   id: number;
   submission: number | Submission;
   createdBy?: (number | null) | User;
-  noteType: 'internal' | 'revision_request' | 'publication_note';
+  noteType: 'internal' | 'revision_request' | 'decision' | 'publication_note';
   note: string;
   updatedAt: string;
   createdAt: string;

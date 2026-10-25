@@ -9,8 +9,9 @@ import { PaperPreview } from '../../../components/PaperPreview'
 import { SubmissionForm } from '../../../components/submission-form/SubmissionForm'
 import { updateSubmission } from './actions'
 import { VersionHistory } from '../../../components/VersionHistory'
-import { approveSubmission, requestRevisions, unpublishSubmission } from './actions'
+import { approveSubmission, recordDecision, requestRevisions, unpublishSubmission } from './actions'
 import { EditorialNav } from '@/app/(frontend)/components/EditorialNav'
+import { isDecisionStatus, workflowStatusLabels } from '@/lib/workflow'
 
 import {
   moveSubmissionToTrash,
@@ -25,12 +26,13 @@ type Props = {
   searchParams: Promise<{
     mode?: string
     revisions?: string
+    decision?: string
   }>
 }
 
 export default async function EditorialSubmissionPage({ params, searchParams }: Props) {
   const { id } = await params
-  const { mode: rawMode, revisions } = await searchParams
+  const { mode: rawMode, revisions, decision } = await searchParams
   const mode = rawMode === 'edit' ? 'edit' : 'preview'
 
   const { payload, user } = await requireRole('editor')
@@ -64,12 +66,13 @@ export default async function EditorialSubmissionPage({ params, searchParams }: 
     sort: 'name',
   })
 
-  const revisionRequests = await payload.find({
+  // Everything the author has been told: revision requests and decisions.
+  const authorNotes = await payload.find({
     collection: 'editor-notes',
     where: {
       and: [
         { submission: { equals: submission.id } },
-        { noteType: { equals: 'revision_request' } },
+        { noteType: { in: ['revision_request', 'decision'] } },
       ],
     },
     sort: '-createdAt',
@@ -90,6 +93,7 @@ export default async function EditorialSubmissionPage({ params, searchParams }: 
           submissionId={submission.id}
           authorEmail={submission.correspondingAuthor?.email}
           revisionAction={requestRevisions}
+          decisionAction={recordDecision}
           unpublishAction={unpublishSubmission}
           previewHref={`/editorial/submissions/${submission.id}?mode=preview`}
           editHref={`/editorial/submissions/${submission.id}?mode=edit`}
@@ -105,7 +109,7 @@ export default async function EditorialSubmissionPage({ params, searchParams }: 
         />
       </div>
 
-      {(revisions === 'sent' || revisionRequests.docs.length > 0) && (
+      {(revisions === 'sent' || isDecisionStatus(decision) || authorNotes.docs.length > 0) && (
         <section className="section editorial-revisions">
           {revisions === 'sent' && (
             <p className="form-success">
@@ -113,17 +117,26 @@ export default async function EditorialSubmissionPage({ params, searchParams }: 
             </p>
           )}
 
-          {revisionRequests.docs.length > 0 && (
+          {isDecisionStatus(decision) && (
+            <p className="form-success">
+              Decision recorded ({workflowStatusLabels[decision]}) and sent to{' '}
+              {submission.correspondingAuthor?.email}.
+            </p>
+          )}
+
+          {authorNotes.docs.length > 0 && (
             <details open={submission.workflowStatus === 'revision_requested'}>
               <summary>
-                Revision requests ({revisionRequests.docs.length})
+                Messages to the author ({authorNotes.docs.length})
                 {submission.workflowStatus === 'revision_requested' &&
                   ' · waiting for the author'}
               </summary>
 
-              {revisionRequests.docs.map((request) => (
+              {authorNotes.docs.map((request) => (
                 <article key={request.id} className="editorial-revision-note">
                   <p className="editorial-dashboard-meta">
+                    {request.noteType === 'decision' ? 'Decision' : 'Revision request'}
+                    {' · '}
                     {new Date(request.createdAt).toLocaleDateString('en-US', {
                       dateStyle: 'medium',
                     })}

@@ -28,6 +28,8 @@ export type NotificationEvent =
   | 'submission.receipt'
   | 'submission.revision_requested'
   | 'submission.resubmitted'
+  | 'submission.accepted'
+  | 'submission.rejected'
   | 'submission.published'
   | 'submission.published.staff'
 
@@ -298,6 +300,47 @@ export async function sendRevisionRequest(
       `This link is personal to you and works until ${formatDate(expiresAt)}, or until you resubmit. Please don't forward it.`,
       'If you have questions, reply to this email.',
     ],
+  })
+}
+
+/*
+ * The editors' decision on a submission. The message is written for the
+ * author (it is required for a rejection, optional for an acceptance).
+ */
+export async function notifyAuthorOfDecision(
+  payload: Payload,
+  submission: Submission,
+  decision: 'accepted' | 'rejected',
+  message?: string,
+) {
+  const author = submission.correspondingAuthor
+  const quote = message ? { label: "The editors' comments", text: message } : undefined
+
+  if (decision === 'accepted') {
+    return deliver(payload, 'submission.accepted', [author.email], `Accepted: ${submission.title}`, {
+      preheader: `"${submission.title}" has been accepted for publication.`,
+      heading: 'Your paper has been accepted',
+      greeting: `Dear ${author.name},`,
+      paragraphs: [
+        `We are pleased to tell you that the editors have accepted "${submission.title}" for publication in Oddtopsy Reports.`,
+      ],
+      quote,
+      closing: [
+        'We will email you again when it is published. You do not need to do anything in the meantime.',
+        'If you have questions, reply to this email.',
+      ],
+    })
+  }
+
+  return deliver(payload, 'submission.rejected', [author.email], `Decision on your submission: ${submission.title}`, {
+    preheader: `The editors' decision on "${submission.title}".`,
+    heading: 'Decision on your submission',
+    greeting: `Dear ${author.name},`,
+    paragraphs: [
+      `Thank you for submitting "${submission.title}" to Oddtopsy Reports. After review, the editors are not able to accept it for publication.`,
+    ],
+    quote,
+    closing: ['We appreciate your interest in the journal. If you have questions, reply to this email.'],
   })
 }
 
