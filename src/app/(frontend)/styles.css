@@ -370,7 +370,7 @@ section:only-of-type {
 /* Sits right of Login; Login's auto margin already pushes both right. */
 .nav-login.nav-request-access {
   margin-left: 0;
-  background: transparent;
+  background-color: var(--color-surface);
   box-shadow: inset 0 0 0 2px var(--color-accent);
   color: var(--color-accent);
   text-shadow: var(--text-shadow-white);
@@ -3281,6 +3281,10 @@ select:focus {
     margin-right: 2rem;
   }
 
+  .footer-links {
+    width: calc(100% - 4rem);
+  }
+
   .paper-editor-actions {
     margin-left: 2rem;
     margin-right: 2rem;
@@ -3331,6 +3335,8 @@ select:focus {
     flex-wrap: wrap;
     gap: var(--space-4);
     justify-content: space-evenly;
+    margin: 0 1rem;
+    width: calc(100% - 2rem);
   }
 
   /* .page-hero,
@@ -3356,6 +3362,10 @@ select:focus {
     gap: var(--space-3);
   }
 
+  .author-card {
+    margin: 0 1rem;
+  }
+
   /* .site-nav {
     width: calc(100% - 70px);
     gap: var(--space-1);
@@ -3377,6 +3387,21 @@ select:focus {
     flex-direction: column;
   } */
 
+  .site-header-inner,
+  .footer-brand,
+  .footer-meta,
+  .empty-state,
+  .page-hero > :not(form),
+  .archive-filters,
+  .form-row,
+  .editorial-board-grid,
+  .site-content-output,
+  .subscribe-layout,
+  .card-grid,
+  .editorial-grid {
+    margin: 0 1rem;
+  }
+
   .hero {
     grid-template-columns: 1fr;
     grid-template-areas:
@@ -3385,7 +3410,8 @@ select:focus {
       'actions';
     gap: var(--space-5);
 
-    width: min(calc(100% - 40px), var(--container));
+    margin: 1rem;
+    width: auto;
     padding: var(--space-6);
   }
 
