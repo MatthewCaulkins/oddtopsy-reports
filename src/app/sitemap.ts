@@ -10,7 +10,7 @@ import { articlePath } from '@/lib/slugs'
 // Built per request: the database is not available while the image is built.
 export const dynamic = 'force-dynamic'
 
-const publicPages = ['/', '/articles', '/about', '/submit']
+const publicPages = ['/', '/articles', '/about', '/submit', '/privacy', '/terms']
 
 function listedPages() {
   return subscriptionsEnabled() ? [...publicPages, '/subscribe'] : publicPages

@@ -356,7 +356,7 @@ describe('subscriptions switch', () => {
     const { default: sitemap } = await import('@/app/sitemap')
     const paths = async () => (await sitemap()).map((entry) => new URL(entry.url).pathname)
 
-    expect(await paths()).toEqual(['/', '/articles', '/about', '/submit'])
+    expect(await paths()).toEqual(['/', '/articles', '/about', '/submit', '/privacy', '/terms'])
 
     process.env.SUBSCRIPTIONS_ENABLED = 'true'
     expect(await paths()).toContain('/subscribe')
