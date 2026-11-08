@@ -67,10 +67,6 @@ export default async function PrivacyPage() {
           <a className="page-link" href="mailto:editorial@oddtopsies.org">
             editorial@oddtopsies.org
           </a>
-          <br />
-          <a className="page-link" href="https://oddtopsies.org">
-            https://oddtopsies.org
-          </a>
         </p>
       </section>
       <Footer />

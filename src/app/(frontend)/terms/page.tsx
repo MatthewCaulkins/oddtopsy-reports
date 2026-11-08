@@ -75,15 +75,13 @@ export default async function PrivacyPage() {
           authentication services. Material changes will be communicated to affected editorial
           users.
         </p>
+        <h4>Contact</h4>
+        <p>For privacy questions or requests to disable SMS authentication, contact:</p>
         <p>
           <b>Oddtopsy Reports</b>
           <br />
           <a className="page-link" href="mailto:editorial@oddtopsies.org">
             editorial@oddtopsies.org
-          </a>
-          <br />
-          <a className="page-link" href="https://oddtopsies.org">
-            https://oddtopsies.org
           </a>
         </p>
       </section>
