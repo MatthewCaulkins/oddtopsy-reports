@@ -7,11 +7,17 @@ export function Footer() {
     <footer className="site-footer">
       <div className="site-footer-inner">
         <div className="footer-links">
-          <a href="/">Home</a>
-          <a href="/articles">Papers</a>
-          <a href="/submit">Submit</a>
-          <a href="/about">About</a>
-          {subscriptionsEnabled() && <a href="/subscribe">Subscribe</a>}
+          <div className="footer-links__left">
+            <a href="/">Home</a>
+            <a href="/articles">Papers</a>
+            <a href="/submit">Submit</a>
+            <a href="/about">About</a>
+            {subscriptionsEnabled() && <a href="/subscribe">Subscribe</a>}
+          </div>
+          <div className="footer-links__right">
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms & Conditions</a>
+          </div>
         </div>
 
         <div className="footer-brand">

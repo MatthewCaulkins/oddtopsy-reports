@@ -325,13 +325,15 @@ section:only-of-type {
 } */
 .site-nav a,
 .footer-links a,
-.nav-login {
+.nav-login,
+.page-link {
   color: var(--color-surface);
   font-weight: 700;
 }
 
 .site-nav a,
-.footer-links a {
+.footer-links a,
+.page-link {
   text-shadow: var(--text-shadow-accent);
 }
 
@@ -346,7 +348,8 @@ section:only-of-type {
 } */
 
 .site-nav a:not(.nav-login):hover,
-.footer-links a:hover {
+.footer-links a:hover,
+.page-link:hover {
   color: var(--color-accent-highlight);
   text-shadow: var(--text-shadow-white);
 }
@@ -573,9 +576,20 @@ section:only-of-type {
 .footer-links {
   width: 100%;
   display: flex;
-  gap: var(--space-6);
+  justify-content: space-between;
   padding-bottom: var(--space-4);
   border-bottom: 1px solid #ffffff5e;
+}
+
+.footer-links__right,
+.footer-links__left {
+  display: flex;
+  gap: var(--space-6);
+}
+
+.site-footer__lower {
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .site-footer h3,
@@ -2623,21 +2637,6 @@ select:focus {
   content: '← ';
 }
 
-@media (max-width: 720px) {
-  /* Keep the ribbon on one line and let it scroll sideways. */
-  .editorial-nav-inner {
-    width: 100%;
-    padding: 0 0.5rem;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .editorial-nav a {
-    padding: 0.8rem 0.85rem;
-    white-space: nowrap;
-  }
-}
-
 /* The profile menu's label for the section you are in. */
 .user-menu-current {
   padding: 0.625rem var(--space-3);
@@ -2731,18 +2730,6 @@ select:focus {
 .button.primary.button-danger {
   background: var(--color-danger);
   color: #fff;
-}
-
-@media (max-width: 760px) {
-  /* Stack: identity first, then the actions, which wrap. */
-  .editorial-user-row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-3);
-  }
-
-  .editorial-user-row > .editorial-user-actions {
-    justify-content: flex-start;
-  }
 }
 
 .editorial-user-row p {
@@ -3270,7 +3257,9 @@ select:focus {
   .site-content-output,
   .subscribe-layout,
   .card-grid,
-  .editorial-grid {
+  .editorial-grid,
+  .privacy,
+  .terms {
     margin: 0 2rem;
     width: auto;
   }
@@ -3339,6 +3328,12 @@ select:focus {
     width: calc(100% - 2rem);
   }
 
+  .footer-links__right,
+  .footer-links__left {
+    justify-content: space-around;
+    width: 100%;
+  }
+
   /* .page-hero,
   .site-footer-inner,
   .site-header-inner,
@@ -3398,7 +3393,9 @@ select:focus {
   .site-content-output,
   .subscribe-layout,
   .card-grid,
-  .editorial-grid {
+  .editorial-grid,
+  .privacy,
+  .terms {
     margin: 0 1rem;
   }
 
@@ -3550,6 +3547,33 @@ select:focus {
   .user-menu,
   .nav-login {
     margin-left: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  /* Stack: identity first, then the actions, which wrap. */
+  .editorial-user-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .editorial-user-row > .editorial-user-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  /* Keep the ribbon on one line and let it scroll sideways. */
+  .editorial-nav-inner {
+    width: 100%;
+    padding: 0 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .editorial-nav a {
+    padding: 0.8rem 0.85rem;
+    white-space: nowrap;
   }
 }
 

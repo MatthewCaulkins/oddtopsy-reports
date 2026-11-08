@@ -1,0 +1,155 @@
+@import '@/styles/editor.css';
+.app-header__account {
+  display: none !important;
+}
+
+.admin-user-menu {
+  position: relative;
+  margin-left: 0.75rem;
+}
+.admin-user-menu summary {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, #2563eb, #ef4444);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+.admin-user-menu summary::-webkit-details-marker {
+  display: none;
+}
+.admin-user-menu__panel {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  min-width: 170px;
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 16px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+.admin-user-menu__panel a,
+.admin-user-menu__panel .admin-user-menu__logout {
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #fff;
+  text-decoration: none;
+}
+.admin-user-menu__panel a:hover,
+.admin-user-menu__panel .admin-user-menu__logout:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.admin-user-menu__panel .admin-user-menu__logout {
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cognito-admin-login {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  text-align: center;
+}
+.cognito-admin-login p {
+  margin: 0;
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+.admin-logout-button {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+
+/* ==========================================================================
+   Jodit Admin Overrides
+   ========================================================================== */
+.jodit-container,
+.jodit-container * {
+  color: #172026;
+}
+
+.jodit-drag-and-drop__file-box,
+.jodit_uploadfile_button {
+  color: #172026 !important;
+}
+
+.jodit-drag-and-drop__file-box a,
+.jodit_uploadfile_button a,
+.jodit-ui-button {
+  color: #172026;
+}
+
+.jodit-container .jodit-workplace {
+  background: #fff;
+}
+
+.jodit-container .jodit-wysiwyg {
+  background: #fff;
+  color: #172026;
+}
+
+/* ==========================================================================
+   Oddtopsy editor modal overrides
+   ========================================================================== */
+.media-picker {
+  background: #fff;
+  color: #172026;
+}
+.media-picker input,
+.media-picker textarea,
+.media-picker select {
+  background: #fff;
+  color: #172026;
+  border: 1px solid #d9dee2;
+}
+.media-picker input::-moz-placeholder, .media-picker textarea::-moz-placeholder {
+  color: #7d8790;
+}
+.media-picker input::placeholder,
+.media-picker textarea::placeholder {
+  color: #7d8790;
+}
+.media-picker .button {
+  background: #fff;
+  color: #172026;
+  border: 1px solid #d9dee2;
+}
+.media-picker .button.primary {
+  background: #286073;
+  color: #fff;
+  border-color: #286073;
+}
+.media-picker .button.secondary {
+  background: #fff;
+  color: #172026;
+}
+.media-picker .media-picker-close {
+  background: #eef1f3;
+  color: #172026;
+}
+.media-picker .media-picker-item {
+  background: #fff;
+  color: #172026;
+  border-color: #d9dee2;
+}
+.media-picker .media-picker-item:hover {
+  border-color: #286073;
+  background: #f5f8f9;
+}/*# sourceMappingURL=custom.css.map */
