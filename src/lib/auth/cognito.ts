@@ -130,16 +130,24 @@ export function createPKCE() {
   return { verifier, challenge }
 }
 
-export function authorizeURL(config: CognitoConfig, state: string, codeChallenge: string) {
+/*
+ * Normal sign-in asks only for openid and email. A step-up sign-in
+ * (before changing MFA settings) also asks for the self-service scope
+ * and makes Cognito authenticate again even inside an existing managed
+ * login session (prompt=login, managed login v2 only).
+ */
+export function authorizeURL(config: CognitoConfig, state: string, codeChallenge: string, { stepUp = false } = {}) {
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: config.clientId,
     redirect_uri: config.redirectURI,
-    scope: 'openid email',
+    scope: stepUp ? 'openid email aws.cognito.signin.user.admin' : 'openid email',
     state,
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
   })
+
+  if (stepUp) params.set('prompt', 'login')
 
   return `${config.domain}/oauth2/authorize?${params}`
 }

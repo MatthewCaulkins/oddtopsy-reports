@@ -396,6 +396,50 @@ try {
     manager.page.url(),
   )
 
+  // ------------------------------------- MFA Agreement (password-only mode: SMS is unavailable here)
+  {
+    const page = manager.page
+    await page.goto(`${BASE}/editorial/account/security`)
+    const navLinks = await page.locator('.editorial-nav a').evaluateAll((links) => links.map((link) => link.textContent.trim()))
+    // The ribbon link stays hidden until SMS can be delivered; once shown it must follow Trash.
+    if (navLinks.includes('MFA Agreement')) {
+      check(
+        'Editorial ribbon lists MFA Agreement right after Trash',
+        navLinks.indexOf('MFA Agreement') === navLinks.indexOf('Trash') + 1 && navLinks.includes('Trash'),
+        navLinks.join(' | '),
+      )
+      check('MFA Agreement link is active on its page', (await page.locator('.editorial-nav a.is-active').textContent())?.trim() === 'MFA Agreement')
+    } else {
+      check('Editorial ribbon still shows Trash while MFA Agreement is hidden', navLinks.includes('Trash'), navLinks.join(' | '))
+    }
+    check(
+      'MFA Agreement page explains SMS is unavailable without Cognito, with no form',
+      (await page.getByRole('heading', { name: 'SMS Multifactor Authentication' }).count()) === 1 &&
+        (await page.locator('text=available only when signing in with Cognito').count()) === 1 &&
+        (await page.getByRole('button', { name: 'Enable SMS Verification' }).count()) === 0,
+    )
+
+    const anonymous = await browser.newContext()
+    const anonymousPage = await anonymous.newPage()
+    await anonymousPage.goto(`${BASE}/editorial/account/security`)
+    check('Anonymous visitors are sent to sign in from MFA Agreement', anonymousPage.url().includes('/login?next=%2Feditorial%2Faccount%2Fsecurity'), anonymousPage.url())
+    await anonymous.close()
+
+    r = await status(manager.context, 'PATCH', `/api/users/${managerID}`, {
+      smsMfaEnabled: true,
+      smsMfaPhoneNumber: '+12055550123',
+      smsMfaTermsAccepted: true,
+    })
+    check(
+      'SMS agreement fields cannot be set through the API, even on your own account',
+      sql(`select coalesce(sms_mfa_enabled::text, 'null') || '|' || coalesce(sms_mfa_phone_number, '') from users where id = ${managerID}`) === 'false|',
+      `HTTP ${r.status()}`,
+    )
+    r = await status(manager.context, 'GET', `/api/users/${adminID}`)
+    const otherUser = await r.json()
+    check('Staff cannot read another user’s SMS agreement', r.status() === 200 && !('smsMfaPhoneNumber' in otherUser) && !('smsMfaEnabled' in otherUser), Object.keys(otherUser).join(','))
+  }
+
   // ------------------------------------- admin powers and auth routes (password-only mode)
   {
     const managerRoleOptions = await manager.page

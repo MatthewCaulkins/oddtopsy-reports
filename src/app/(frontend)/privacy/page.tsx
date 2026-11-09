@@ -10,7 +10,7 @@ export default async function PrivacyPage() {
       </section>
 
       <section className="section privacy">
-        <h4>Last updated: November 7, 2026</h4>
+        <h4>Last updated: November 8, 2026</h4>
         <p>
           Oddtopsy Reports respects the privacy of its editorial staff and contributors. SMS
           authentication is an optional security feature available to authorized editorial users.
@@ -18,9 +18,11 @@ export default async function PrivacyPage() {
 
         <h4>Information Collected</h4>
         <p>
-          When an editor voluntarily enrolls in SMS authentication, Oddtopsy Reports collects and
-          stores their mobile telephone number through its authentication provider, Amazon Web
-          Services (AWS Cognito).
+          When an editor voluntarily enrolls in SMS authentication, Oddtopsy Reports collects their
+          mobile telephone number and stores it with its authentication provider, Amazon Web
+          Services (AWS Cognito). Oddtopsy Reports also records, with the editor's account, the
+          enrolled number, the date and time the editor gave consent, and that the editor accepted
+          the SMS Authentication Terms and Conditions and this policy.
         </p>
         <h4>Use of Information</h4>
         <p>
@@ -33,13 +35,14 @@ export default async function PrivacyPage() {
         </p>
         <h4>Consent and Choice</h4>
         <p>
-          Editors may voluntarily consent to SMS authentication during account enrollment or through
-          direct communication with the editorial administration team.
+          Editors consent to SMS authentication themselves, on the MFA Agreement page of the
+          Oddtopsy Reports editorial site, by checking a box to consent to receive SMS verification
+          codes and separately checking a box to accept the terms and this policy. Neither box is
+          checked in advance, and consent is never given on an editor's behalf by an administrator.
         </p>
         <p>
           Participation in SMS authentication is optional. Editors who decline or withdraw consent
-          may continue using email-based multifactor authentication, where supported by their
-          account configuration.
+          continue to receive sign-in verification codes by email.
         </p>
         <h4>Information Sharing</h4>
         <p>
@@ -52,12 +55,14 @@ export default async function PrivacyPage() {
         </p>
         <h4>Data Retention and Removal</h4>
         <p>
-          Phone numbers are retained while SMS authentication remains enabled for the editor's
-          account or as otherwise required for legitimate security and compliance purposes.
+          Phone numbers and SMS agreement details are retained only while SMS authentication remains
+          enabled for the editor's account. When it is disabled, they are removed from the account
+          and from the authentication system. If an editor replies STOP, the messaging service may
+          keep a record of that request so that no further messages are sent to the number.
         </p>
         <p>
-          Editors may request removal of their phone numbers from the authentication system by
-          contacting the editorial team.
+          Editors may remove their phone numbers at any time by selecting Disable SMS Verification
+          on the MFA Agreement page, or by contacting the editorial team.
         </p>
         <h4>Contact</h4>
         <p>For privacy questions or requests to disable SMS authentication, contact:</p>

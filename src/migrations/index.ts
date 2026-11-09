@@ -3,8 +3,9 @@ import * as migration_20261022_024423_rbac_media_audience_revisions from './2026
 import * as migration_20261022_210138_access_requests_account_status from './20261022_210138_access_requests_account_status';
 import * as migration_20261023_033327_users_cognito_sub from './20261023_033327_users_cognito_sub';
 import * as migration_20261023_192751_submissions_submission_key from './20261023_192751_submissions_submission_key';
-import * as migration_20261024_130000_editor_notes_decision from './20261024_130000_editor_notes_decision';
 import * as migration_20261024_120000_backfill_article_slugs from './20261024_120000_backfill_article_slugs';
+import * as migration_20261024_130000_editor_notes_decision from './20261024_130000_editor_notes_decision';
+import * as migration_20261108_210731_users_sms_mfa_agreement from './20261108_210731_users_sms_mfa_agreement';
 
 export const migrations = [
   {
@@ -41,5 +42,10 @@ export const migrations = [
     up: migration_20261024_130000_editor_notes_decision.up,
     down: migration_20261024_130000_editor_notes_decision.down,
     name: '20261024_130000_editor_notes_decision',
+  },
+  {
+    up: migration_20261108_210731_users_sms_mfa_agreement.up,
+    down: migration_20261108_210731_users_sms_mfa_agreement.down,
+    name: '20261108_210731_users_sms_mfa_agreement'
   },
 ];

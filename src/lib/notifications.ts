@@ -24,6 +24,8 @@ export type NotificationEvent =
   | 'access_request.received'
   | 'access_request.rejected'
   | 'account.invite'
+  | 'account.sms_mfa_enabled'
+  | 'account.sms_mfa_disabled'
   | 'submission.received'
   | 'submission.receipt'
   | 'submission.revision_requested'
@@ -381,5 +383,42 @@ export async function sendAccountInvite(payload: Payload, user: User, setupURL: 
       closing: [`This link works until ${formatDate(expiresAt)}.`, 'If you did not request an account, you can ignore this email.'],
     },
     { throwOnFailure: true },
+  )
+}
+
+/*
+ * Security notice to the account's own email whenever SMS sign-in codes
+ * are turned on or off, so a change made from a hijacked session cannot
+ * redirect sign-in codes unnoticed. Shows only the last four digits.
+ */
+export async function notifyUserOfSmsMfaChange(
+  payload: Payload,
+  user: Pick<User, 'email' | 'profile'>,
+  change: 'enabled' | 'disabled',
+  numberHint: string,
+) {
+  const name = user.profile?.displayName || user.email
+  const enabled = change === 'enabled'
+
+  return deliver(
+    payload,
+    enabled ? 'account.sms_mfa_enabled' : 'account.sms_mfa_disabled',
+    [user.email],
+    enabled ? 'SMS sign-in codes turned on' : 'SMS sign-in codes turned off',
+    {
+      preheader: enabled
+        ? 'Your Oddtopsy Reports sign-in codes will now come by text message.'
+        : 'Your Oddtopsy Reports sign-in codes will now come by email.',
+      heading: enabled ? 'SMS verification is on' : 'SMS verification is off',
+      greeting: `Dear ${name},`,
+      paragraphs: [
+        enabled
+          ? `Sign-in codes for your Oddtopsy Reports account will now be sent by text message to the phone number ${numberHint}. Email remains available as a backup method.`
+          : `SMS verification was turned off for your Oddtopsy Reports account${numberHint ? ` (phone number ${numberHint})` : ''}. Sign-in codes will be sent to this email address.`,
+      ],
+      details: [{ label: 'Changed', value: new Date().toUTCString() }],
+      action: { label: 'Review your MFA settings', url: `${siteURL}/editorial/account/security` },
+      closing: ['If you did not make this change, contact the editorial team right away.'],
+    },
   )
 }

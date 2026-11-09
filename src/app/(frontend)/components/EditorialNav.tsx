@@ -3,7 +3,7 @@ import { hasRole } from '@/access/roles'
 
 type Props = {
   user: User
-  active?: 'editorial' | 'papers' | 'pages' | 'users' | 'trash'
+  active?: 'editorial' | 'papers' | 'pages' | 'users' | 'trash' | 'security'
 }
 
 export function EditorialNav({ user, active }: Props) {
@@ -33,6 +33,13 @@ export function EditorialNav({ user, active }: Props) {
         <a href="/editorial/trash" className={active === 'trash' ? 'is-active' : undefined}>
           Trash
         </a>
+
+        {/* <a
+          href="/editorial/account/security"
+          className={active === 'security' ? 'is-active' : undefined}
+        >
+          MFA Agreement
+        </a> */}
 
         <a href="/" className="editorial-nav-return">
           Return to Frontend

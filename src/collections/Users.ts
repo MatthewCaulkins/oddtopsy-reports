@@ -1,4 +1,4 @@
-import { APIError, type CollectionConfig, type PayloadRequest } from 'payload'
+import { APIError, type CollectionConfig, type FieldAccess, type PayloadRequest } from 'payload'
 
 import { canAssignRole, canSetAccountStatus, hasRole } from '@/access/roles'
 import { assertAnotherActiveAdmin } from '@/lib/auth/adminGuard'
@@ -8,6 +8,12 @@ import { cognitoStrategy } from '@/lib/auth/cognitoStrategy'
 import type { User } from '@/payload-types'
 
 const authConfig = getAuthConfig()
+
+const smsAgreementAccess: { read: FieldAccess; create: FieldAccess; update: FieldAccess } = {
+  read: ({ req, doc }) => hasRole(req.user, 'admin') || (Boolean(req.user) && String(req.user?.id) === String(doc?.id)),
+  create: () => false,
+  update: () => false,
+}
 
 /*
  * Keeps the linked Cognito account in step when Payload disables or
@@ -266,6 +272,49 @@ export const Users: CollectionConfig = {
         readOnly: true,
         description: 'Linked Cognito account. Set automatically when the account is provisioned.',
       },
+    },
+    /*
+     * The current SMS MFA agreement: what the user agreed to when they
+     * turned on SMS sign-in codes on Editorial > MFA Agreement. Only
+     * that workflow writes these (server-side, after Cognito confirms),
+     * and disabling clears them; there is no history. Readable by the
+     * user themselves and admins, since other staff can read users.
+     */
+    {
+      type: 'collapsible',
+      label: 'SMS MFA agreement',
+      admin: {
+        initCollapsed: true,
+        description: 'Managed by the user on Editorial > MFA Agreement. Read-only here.',
+      },
+      fields: [
+        {
+          name: 'smsMfaEnabled',
+          type: 'checkbox',
+          defaultValue: false,
+          access: smsAgreementAccess,
+          admin: { readOnly: true },
+        },
+        {
+          name: 'smsMfaPhoneNumber',
+          type: 'text',
+          access: smsAgreementAccess,
+          admin: { readOnly: true, description: 'E.164, verified with Cognito.' },
+        },
+        {
+          name: 'smsMfaConsentedAt',
+          type: 'date',
+          access: smsAgreementAccess,
+          admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
+        },
+        {
+          name: 'smsMfaTermsAccepted',
+          type: 'checkbox',
+          defaultValue: false,
+          access: smsAgreementAccess,
+          admin: { readOnly: true },
+        },
+      ],
     },
     // Email added by default
     // Add more fields as needed

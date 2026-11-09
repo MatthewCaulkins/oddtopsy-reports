@@ -10,7 +10,7 @@ export default async function PrivacyPage() {
       </section>
 
       <section className="section terms">
-        <h4>Last updated: November 7, 2026</h4>
+        <h4>Last updated: November 8, 2026</h4>
         <p>
           Oddtopsy Reports offers optional SMS multifactor authentication (MFA) to authorized
           editorial staff members.
@@ -22,12 +22,17 @@ export default async function PrivacyPage() {
         </p>
         <h4>Enrollment and Consent</h4>
         <p>
-          Enrollment is voluntary. Editors may provide verbal consent to an authorized Oddtopsy
-          Reports administrator and supply a mobile phone number for authentication purposes.
+          Enrollment is voluntary. A signed-in editor enrolls on the MFA Agreement page of the
+          Oddtopsy Reports editorial site by entering a mobile phone number, checking a box to
+          consent to receive SMS verification codes, and separately checking a box to accept these
+          terms and the SMS Authentication Privacy Policy. Neither box is checked in advance. SMS
+          authentication is turned on only after the editor confirms the number by entering a code
+          sent to it.
         </p>
         <p>
           Agreeing to serve as an editor does not automatically constitute consent to receive SMS
-          messages. Consent for SMS authentication is obtained separately.
+          messages. Consent for SMS authentication is given separately, by the editor, and is never
+          given on an editor's behalf by an administrator.
         </p>
         <h4>Message Frequency and Charges</h4>
         <p>
@@ -40,29 +45,30 @@ export default async function PrivacyPage() {
         </p>
         <h4>Opting Out</h4>
         <p>
-          Editors may decline SMS enrollment or withdraw their consent at any time by contacting{' '}
+          Editors may decline SMS enrollment, or withdraw their consent at any time by selecting
+          Disable SMS Verification on the MFA Agreement page or by contacting{' '}
           <a className="page-link" href="mailto:editorial@oddtopsies.org">
             editorial@oddtopsies.org
           </a>
           .
         </p>
         <p>
-          Upon processing an opt-out request, Oddtopsy Reports will disable SMS authentication for
-          the affected account and provide an alternative supported authentication method, such as
-          email MFA.
+          When SMS authentication is disabled, sign-in verification codes are sent by email instead,
+          and the editor's mobile phone number and SMS agreement are removed from the account.
         </p>
         <h4>Assistance</h4>
         <p>
           For assistance with authentication messages, account access, or SMS enrollment, contact{' '}
-          <a className="page-link" href="mailto:editorial@oddtopsies.org.">
+          <a className="page-link" href="mailto:editorial@oddtopsies.org">
             editorial@oddtopsies.org
           </a>
           .
         </p>
         <p>
-          Where supported by the messaging service, recipients may also reply HELP for assistance or
-          STOP to request that SMS messages cease. Contacting the editorial team is the reliable
-          method for changing account MFA preferences.
+          Recipients may also reply HELP for assistance or STOP to stop receiving SMS messages.
+          Replying STOP does not change how the editor signs in, so an editor who replies STOP
+          should also disable SMS verification on the MFA Agreement page, or contact the editorial
+          team, to receive sign-in codes by email instead.
         </p>
         <h4>Privacy</h4>
         <p>

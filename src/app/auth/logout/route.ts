@@ -7,6 +7,7 @@ import {
   refreshTokenCookie,
   revokeRefreshToken,
 } from '@/lib/auth/cognito'
+import { mfaAccessCookie, mfaCookiePath, smsEnrollmentCookie } from '@/lib/auth/cognitoMfa'
 import { readCookie } from '@/lib/signedCookies'
 
 /*
@@ -32,6 +33,8 @@ export async function POST(request: Request) {
 
   response.cookies.delete(idTokenCookie)
   response.cookies.delete(refreshTokenCookie)
+  response.cookies.delete({ name: mfaAccessCookie, path: mfaCookiePath })
+  response.cookies.delete({ name: smsEnrollmentCookie, path: mfaCookiePath })
 
   return response
 }

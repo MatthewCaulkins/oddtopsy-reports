@@ -175,6 +175,13 @@ export interface User {
    * Linked Cognito account. Set automatically when the account is provisioned.
    */
   cognitoSub?: string | null;
+  smsMfaEnabled?: boolean | null;
+  /**
+   * E.164, verified with Cognito.
+   */
+  smsMfaPhoneNumber?: string | null;
+  smsMfaConsentedAt?: string | null;
+  smsMfaTermsAccepted?: boolean | null;
   profile?: {
     displayName?: string | null;
     title?: string | null;
@@ -704,6 +711,10 @@ export interface UsersSelect<T extends boolean = true> {
   role?: T;
   accountStatus?: T;
   cognitoSub?: T;
+  smsMfaEnabled?: T;
+  smsMfaPhoneNumber?: T;
+  smsMfaConsentedAt?: T;
+  smsMfaTermsAccepted?: T;
   profile?:
     | T
     | {

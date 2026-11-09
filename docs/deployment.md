@@ -10,7 +10,7 @@ Production runs in AWS `us-east-1`:
 | Database | RDS PostgreSQL `oddtopsy-reports` (private; deletion protection) |
 | Media | S3 `oddtopsy-reports-media` |
 | Email | SES domain identity `oddtopsies.org`, from `editorial@oddtopsies.org` |
-| Sign-in | Cognito user pool `us-east-1_kAPBrKuJ7`, managed login at `https://auth.oddtopsies.org` (required email MFA, Essentials plan) |
+| Sign-in | Cognito user pool `us-east-1_kAPBrKuJ7`, managed login at `https://auth.oddtopsies.org` (required MFA: email, or SMS for editors who opt in; Essentials plan) |
 | DNS | Route 53 hosted zone `oddtopsies.org` (`Z01082401CFKXG0W0E1CJ`); Squarespace is the registrar only |
 | Logs | CloudWatch `/ecs/oddtopsy-reports` (30-day retention) |
 | Secrets | Secrets Manager `oddtopsy-reports/app` (PAYLOAD_SECRET, COGNITO_CLIENT_SECRET, ...) and the RDS-managed secret |
@@ -89,3 +89,55 @@ To change a record, edit the JSON file and apply it with `aws route53 change-res
 3. The nameservers were then changed in Squarespace. After propagation, the site, `auth`, SES DKIM and both ACM certificates were checked.
 
 Rollback, if ever needed: in Squarespace, set the nameservers back to `nsa1`–`nsa4.squarespacedns.com`. This works only while the old Squarespace records still exist, and they must be checked first: the apex A records there are manual IPs that will go stale.
+
+## SMS MFA (Editorial > MFA Agreement)
+
+Editors can choose text-message sign-in codes instead of email at `/editorial/account/security`. Email MFA stays the default and remains enabled as the backup method for anyone who turns SMS on.
+
+**How it works.** Cognito managed login still runs every sign-in challenge (`EMAIL_OTP` or `SMS_MFA`); the app never handles codes at sign-in. To change MFA settings, the page asks for a fresh step-up sign-in: `/auth/login?reauth=1` requests the extra scope `aws.cognito.signin.user.admin` and `prompt=login` (managed login v2). The callback keeps that access token for 10 minutes only, in an httpOnly cookie scoped to `/editorial/account`. Normal sign-in never requests the scope. With that token the server:
+
+1. sets `phone_number` (`UpdateUserAttributes`) and has Cognito text a code (`GetUserAttributeVerificationCode`; this pool does not auto-verify phone numbers);
+2. checks the code (`VerifyUserAttribute`);
+3. sets SMS as preferred with email still enabled (`SetUserMFAPreference`), then reads the result back (`GetUser`);
+4. only then saves the agreement on the Payload user (`smsMfaEnabled`, `smsMfaPhoneNumber`, `smsMfaConsentedAt`, `smsMfaTermsAccepted`).
+
+Turning SMS off is a single `SetUserMFAPreference` call (SMS off, email on and preferred), then `DeleteUserAttributes` for `phone_number` only (so it stops working for account recovery). The agreement fields are cleared after Cognito confirms. Both changes email the account holder. The page reads Cognito's state with `AdminGetUser` (task role, already allowed). If Cognito no longer uses SMS, the page clears the agreement. If Cognito uses SMS without a matching agreement, or with a different number, the page flags it.
+
+These self-service calls are authorized by the user's token, not IAM, so neither the task role nor the deployment user needs new permissions.
+
+### Deployment plan
+
+Prerequisites, in the AWS console (none of these affects normal sign-in on its own):
+
+1. **App client** `4ggd90nvvebiooe16q9v33fdbt` (User pool > App clients > Login pages, and Attribute permissions). Edit it in the console. The CLI's `update-user-pool-client` resets every setting you leave out.
+   - Add the OAuth scope **`aws.cognito.signin.user.admin`** to the allowed scopes. Without it, the step-up sign-in returns `invalid_scope`, and the page shows "The confirmation sign-in did not complete". Normal sign-in is unaffected.
+   - Give the app client read access to `phone_number` and `phone_number_verified`, and write access to `phone_number`.
+2. **Pool MFA:** no change needed. As of 2026-11-08 the pool already has MFA `ON`, email MFA, and SMS MFA through End User Messaging (`EumsSms`, role `oddtopsies-sms-role`). Optionally brand the SMS texts: the authentication message is currently "Your authentication code is {####}." Set it and the phone verification message to something like "Oddtopsy Reports code: {####}". Toll-free registration usually requires the brand name in messages.
+3. **End User Messaging SMS:** while the account is in the SMS sandbox, only verified destination numbers receive texts. Add each enrolling editor's number as a sandbox destination, or wait for toll-free registration and production access. If an unverified number is used, the code never arrives and enrollment simply cannot finish; nothing is turned on. Check the monthly SMS spend limit.
+4. **Policy pages:** `/terms` and `/privacy` (updated 2026-11-08) describe the web opt-in at `/editorial/account/security`. The toll-free registration's opt-in description (and any screenshot) should match them.
+5. **Ribbon link:** the MFA Agreement link in `EditorialNav.tsx` is commented out until SMS can be delivered (originator number approved). The page itself is deployed and reachable by URL. Un-comment the link to launch.
+
+Release (the usual recipe; one migration, no new environment variables):
+
+1. Manual RDS snapshot `oddtopsy-reports-pre-sms-mfa-<date>`.
+2. Build from a clean worktree, register a task definition copied from the current revision with only the image digest changed, and diff it.
+3. Run the one-off migration task: `20261108_210731_users_sms_mfa_agreement` adds four columns to `users`. Existing users get `false` for the two booleans and `NULL` for the phone number and consent time.
+4. Update the service and wait for `COMPLETED`.
+
+Production smoke test (by an admin, on their own account, with a sandbox-verified phone):
+
+- **Without SMS:** sign out and in again. The email code still arrives, and (once the link is un-commented) the ribbon shows MFA Agreement after Trash.
+- **Before step-up:** the page shows "Off: sign-in codes are sent by email" and asks you to sign in again. The sign-in requires a fresh code, then the form appears, with both boxes unchecked and the button disabled.
+- **Enroll:** you receive a text code, and the status turns on only after it is entered. A security email arrives.
+- **Sign in by SMS:** sign out and in. Cognito asks for an SMS code. Check whether managed login offers email as an alternative.
+- **Disable:** the status shows email, the security email arrives, and the next sign-in asks for an email code. In the Cognito console the user has no `phone_number`.
+- **Logs:** CloudWatch shows `sms_mfa.*` events with user IDs only, never numbers or codes.
+
+### Recovery and rollback
+
+- **An editor cannot receive SMS codes** (lost phone, replied STOP, carrier problem): an operator switches them back to email. The deployment user would need `cognito-idp:AdminSetUserMFAPreference` and `cognito-idp:AdminDeleteUserAttributes` on the pool, or the operator uses the console.
+  `aws cognito-idp admin-set-user-mfa-preference --user-pool-id us-east-1_kAPBrKuJ7 --username <sub> --sms-mfa-settings Enabled=false,PreferredMfa=false --email-mfa-settings Enabled=true,PreferredMfa=true`
+  The next time they open MFA Agreement, the page clears their agreement to match.
+- **App rollback:** update the service to the previous revision. The new columns are harmless to the old image, so leave them. Editors who turned SMS on keep SMS in Cognito, which the old image cannot change; switch them back as above if needed.
+- **Schema rollback:** `payload migrate:down` drops the four columns and their agreements, or restore the snapshot.
+- **App client:** removing the scope again disables only the step-up sign-in.
